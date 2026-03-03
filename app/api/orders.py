@@ -72,6 +72,21 @@ async def create_order(req: CreateOrderRequest, db: AsyncSession = Depends(get_d
         except:
             checkout_time = req.checkout_time
     
+    # 檢查重複訂單 (相同房源 + 相同時間)
+    if req.property_id and checkout_time:
+        existing = await db.execute(
+            select(Order).where(
+                Order.property_id == req.property_id,
+                Order.checkout_time == checkout_time,
+                Order.status == OrderStatus.OPEN
+            )
+        )
+        if existing.first():
+            raise HTTPException(
+                status_code=400, 
+                detail="該房源在此時間已有未完成訂單"
+            )
+    
     order = Order(
         property_id=req.property_id,
         host_id=req.host_id,
