@@ -348,14 +348,18 @@
             addrList.innerHTML = props.map(p => `<option value="${p.address}">`).join('');
             
             if (props.length) {
-                // Only add once using unique ID
+                // Only add once using unique ID in create order page
                 if (!document.getElementById('propertySelectContainer')) {
                     const container = document.createElement('div');
                     container.id = 'propertySelectContainer';
                     container.innerHTML = '<div class="form-group"><label>選擇房源</label><select id="propertySelect" onchange="fillPropertyAddress()">' + 
                         props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('') + 
                         '</select></div>';
-                    document.getElementById('newPropName').parentNode.prepend(container);
+                    // Insert after the card title
+                    const card = document.querySelector('#pageCreate .card');
+                    if (card && card.firstChild) {
+                        card.insertBefore(container, card.firstChild.nextSibling);
+                    }
                 }
             }
             
