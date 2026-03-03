@@ -17,8 +17,26 @@ logger = logging.getLogger(__name__)
 # --- 任務定義 ---
 async def send_notification(ctx, user_id: int, title: str, body: str):
     """發送通知任務"""
-    # 實現通知邏輯 (推送/郵件等)
-    logger.info(f"📱 通知用戶 {user_id}: {title} - {body}")
+    from app.services.notifications import send_push_notification
+    await send_push_notification(user_id, title, body)
+
+
+async def notify_new_order(ctx, order_id: int, cleaner_ids: list):
+    """新訂單通知"""
+    from app.services.notifications import notify_new_order as send_notify
+    await send_notify(ctx, order_id, cleaner_ids)
+
+
+async def notify_order_accepted(ctx, order_id: int, host_id: int, cleaner_name: str):
+    """訂單被接通知"""
+    from app.services.notifications import notify_order_accepted as send_notify
+    await send_notify(ctx, order_id, host_id, cleaner_name)
+
+
+async def notify_order_completed(ctx, order_id: int, host_id: int, cleaner_name: str):
+    """訂單完成通知"""
+    from app.services.notifications import notify_order_completed as send_notify
+    await send_notify(ctx, order_id, host_id, cleaner_name)
 
 
 async def cleanup_old_orders(ctx, days: int = 30):
@@ -37,6 +55,9 @@ class WorkerSettings:
     """Arq Worker 設置"""
     functions = [
         send_notification,
+        notify_new_order,
+        notify_order_accepted,
+        notify_order_completed,
         cleanup_old_orders,
         sync_cleaner_location,
     ]

@@ -80,6 +80,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 from fastapi.responses import FileResponse
 
 
+@app.get("/")
+async def index_page():
+    return FileResponse("static/cleaner.html")
+
+
 @app.get("/cleaner")
 async def cleaner_page():
     return FileResponse("static/cleaner.html")
@@ -96,13 +101,14 @@ async def admin_page():
 
 
 # 路由
-from app.api import orders, auth, properties, cleaners, order_status, upload
+from app.api import orders, auth, properties, cleaners, order_status, upload, notifications
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(properties.router, prefix="/api/properties", tags=["Properties"])
 app.include_router(cleaners.router, prefix="/api/cleaners", tags=["Cleaners"])
 app.include_router(order_status.router, prefix="/api/orders", tags=["Order Status"])
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 
 # WebSocket
 from app.api.orders import websocket_orders
