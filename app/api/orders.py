@@ -1,6 +1,7 @@
 """
 訂單 API - 含樂觀鎖搶單 + WebSocket 廣播
 """
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
@@ -53,13 +54,21 @@ async def list_orders(
 @router.post("")
 async def create_order(req: CreateOrderRequest, db: AsyncSession = Depends(get_db)):
     """創建訂單"""
+    # 轉換時間格式
+    checkout_time = None
+    if req.checkout_time:
+        try:
+            checkout_time = datetime.fromisoformat(req.checkout_time.replace('Z', '+00:00'))
+        except:
+            checkout_time = req.checkout_time
+    
     order = Order(
         property_id=req.property_id,
         host_id=req.host_id,
         host_name=req.host_name,
         host_phone=req.host_phone,
         price=req.price,
-        checkout_time=req.checkout_time,
+        checkout_time=checkout_time,
         text_notes=req.text_notes,
         status=OrderStatus.OPEN,
     )

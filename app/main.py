@@ -62,6 +62,11 @@ async def root():
     return FileResponse("static/cleaner.html")
 
 
+@app.get("/index.html")
+async def index_html():
+    return FileResponse("static/cleaner.html")
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
