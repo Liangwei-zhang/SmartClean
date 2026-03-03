@@ -10,7 +10,7 @@ from sqlmodel import func
 from app.core.database import get_db
 from app.core.response import success_response, error_response
 from app.core.websocket import manager
-from app.models.models import Order, OrderStatus, Cleaner
+from app.models.models import Order, OrderStatus, Cleaner, Property
 from pydantic import BaseModel
 
 
@@ -49,7 +49,7 @@ async def list_orders(
     status: str = "open",
     db: AsyncSession = Depends(get_db)
 ):
-    """訂單列表"""
+    """訂單列表 - 包含房源信息"""
     query = select(Order)
     if status:
         query = query.where(Order.status == status)
@@ -58,7 +58,23 @@ async def list_orders(
     result = await db.execute(query)
     orders = result.scalars().all()
     
-    return success_response(data=[serialize_order(o) for o in orders])
+    # 獲取每個訂單的房源信息
+    order_list = []
+    for o in orders:
+        order_data = serialize_order(o)
+        
+        # 獲取房源信息
+        prop_result = await db.execute(
+            select(Property).where(Property.id == o.property_id)
+        )
+        prop = prop_result.scalar_one_or_none()
+        if prop:
+            order_data['property_name'] = prop.name
+            order_data['property_address'] = prop.address
+        
+        order_list.append(order_data)
+    
+    return success_response(data=order_list)
 
 
 @router.post("")
