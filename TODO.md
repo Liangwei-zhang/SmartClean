@@ -56,9 +56,9 @@
 - [x] 圖片上傳 API
 
 ### 前端
-- [ ] 搶單大廳頁面 (cleaner.html)
-- [ ] 房東發單頁面 (host.html)
-- [ ] 管理員頁面 (admin.html)
+- [x] 搶單大廳頁面 (cleaner.html)
+- [x] 房東發單頁面 (host.html)
+- [x] 管理員頁面 (admin.html)
 
 ### 部署
 - [ ] 測試環境部署
