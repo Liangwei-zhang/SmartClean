@@ -225,6 +225,10 @@
         function logout() { localStorage.clear(); location.reload(); }
         
         async function createOrder() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '發布中...';
+            
             const property_id = document.getElementById('propertySelect')?.value || 1;
             const price = parseFloat(document.getElementById('price').value);
             const checkout_time = document.getElementById('checkoutTime').value;
@@ -232,30 +236,40 @@
             
             if (!price || !checkout_time) {
                 showToast('請填寫必填欄位');
+                btn.disabled = false;
+                btn.textContent = '🚀 發布訂單';
                 return;
             }
             
-            const res = await fetch(API + '/orders', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    property_id,
-                    price,
-                    checkout_time,
-                    text_notes,
-                    host_id: parseInt(hostId),
-                    host_name: hostName
-                })
-            });
-            
-            const data = await res.json();
-            if (data.success) {
-                showToast('訂單發布成功！');
-                document.getElementById('price').value = '150';
-                document.getElementById('notes').value = '';
-                loadOrders();
-            } else {
-                showToast(data.message || '發布失敗');
+            try {
+                const res = await fetch(API + '/orders', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        property_id,
+                        price,
+                        checkout_time,
+                        text_notes,
+                        host_id: parseInt(hostId),
+                        host_name: hostName
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    showToast('✅ 訂單發布成功！');
+                    document.getElementById('price').value = '150';
+                    document.getElementById('notes').value = '';
+                    document.getElementById('checkoutTime').value = '';
+                    loadOrders();
+                } else {
+                    showToast(data.message || '發布失敗');
+                }
+            } catch(e) {
+                showToast('網絡錯誤，請重試');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 發布訂單';
             }
         }
         
