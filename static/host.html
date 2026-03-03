@@ -79,13 +79,15 @@
             <h3 style="margin-bottom: 16px;">📝 發布新訂單</h3>
             
             <div class="form-group">
-                <label>房源名稱</label>
-                <input type="text" id="propName" placeholder="例如：市中心公寓">
+                <label>選擇房源</label>
+                <select id="propertySelect" onchange="fillPropertyAddress()">
+                    <option value="">-- 請選擇房源 --</option>
+                </select>
             </div>
             
             <div class="form-group">
                 <label>房源地址</label>
-                <input type="text" id="propAddress" placeholder="完整地址">
+                <input type="text" id="propAddress" readonly placeholder="選擇房源後自動填入">
             </div>
             
             <div class="form-group">
@@ -233,13 +235,13 @@
             btn.disabled = true;
             btn.textContent = '發布中...';
             
-            const property_id = document.getElementById('propertySelect')?.value || 1;
+            const property_id = document.getElementById('propertySelect')?.value;
             const price = parseFloat(document.getElementById('price').value);
             const checkout_time = document.getElementById('checkoutTime').value;
             const text_notes = document.getElementById('notes').value;
             
-            if (!price || !checkout_time) {
-                showToast('請填寫必填欄位');
+            if (!property_id || !price || !checkout_time) {
+                showToast('請選擇房源並填寫必填欄位');
                 btn.disabled = false;
                 btn.textContent = '🚀 發布訂單';
                 return;
@@ -348,18 +350,11 @@
             addrList.innerHTML = props.map(p => `<option value="${p.address}">`).join('');
             
             if (props.length) {
-                // Only add once using unique ID in create order page
-                if (!document.getElementById('propertySelectContainer')) {
-                    const container = document.createElement('div');
-                    container.id = 'propertySelectContainer';
-                    container.innerHTML = '<div class="form-group"><label>選擇房源</label><select id="propertySelect" onchange="fillPropertyAddress()">' + 
-                        props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('') + 
-                        '</select></div>';
-                    // Insert after the card title
-                    const card = document.querySelector('#pageCreate .card');
-                    if (card && card.firstChild) {
-                        card.insertBefore(container, card.firstChild.nextSibling);
-                    }
+                // Populate property select in create order form
+                const select = document.getElementById('propertySelect');
+                if (select) {
+                    select.innerHTML = '<option value="">-- 請選擇房源 --</option>' + 
+                        props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('');
                 }
             }
             
