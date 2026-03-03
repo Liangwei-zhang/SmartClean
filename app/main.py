@@ -74,6 +74,25 @@ os.makedirs(f"{upload_dir}/images", exist_ok=True)
 os.makedirs(f"{upload_dir}/voices", exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# 前端頁面路由
+from fastapi.responses import FileResponse
+
+
+@app.get("/cleaner")
+async def cleaner_page():
+    return FileResponse("static/cleaner.html")
+
+
+@app.get("/host")
+async def host_page():
+    return FileResponse("static/host.html")
+
+
+@app.get("/admin")
+async def admin_page():
+    return FileResponse("static/admin.html")
 
 
 # 路由

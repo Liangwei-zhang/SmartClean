@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartClean - 管理後台</title>
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text-main); }
+        
+        .header { background: var(--primary); color: white; padding: 20px; }
+        .header h1 { font-size: 24px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stat-value { font-size: 32px; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+        
+        .section { padding: 16px; }
+        .section-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+        
+        table { width: 100%; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; font-weight: 600; font-size: 14px; }
+        td { font-size: 14px; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .status-open { background: #d1fae5; color: #065f46; }
+        .status-accepted { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #f1f5f9; color: #475569; }
+        
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-danger { background: #fee2e2; color: #dc2626; }
+        
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>⚙️ SmartClean 管理後台</h1>
+    </header>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value" id="totalOrders">-</div>
+            <div class="stat-label">總訂單</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalCleaners">-</div>
+            <div class="stat-label">清潔工人數</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalProperties">-</div>
+            <div class="stat-label">房源數量</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalRevenue">-</div>
+            <div class="stat-label">總營收</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">📋 最新訂單</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>房源</th>
+                    <th>金額</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTable"></tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">👷 清潔工人</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>電話</th>
+                    <th>完成單數</th>
+                    <th>評分</th>
+                </tr>
+            </thead>
+            <tbody id="cleanersTable"></tbody>
+        </table>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        const API = window.location.origin + '/api';
+        loadData();
+        
+        async function loadData() {
+            // Orders
+            const ordersRes = await fetch(API + '/orders');
+            const ordersData = await ordersRes.json();
+            
+            if (ordersData.success) {
+                const orders = ordersData.data;
+                document.getElementById('totalOrders').textContent = orders.length;
+                document.getElementById('totalRevenue').textContent = '$' + orders.reduce((sum, o) => sum + (o.price || 0), 0);
+                
+                document.getElementById('ordersTable').innerHTML = orders.slice(0, 10).map(o => `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>${o.property_name || '-'}</td>
+                        <td>$${o.price}</td>
+                        <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+                        <td><button class="btn btn-danger" onclick="deleteOrder(${o.id})">刪除</button></td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Cleaners
+            const cleanersRes = await fetch(API + '/cleaners');
+            const cleanersData = await cleanersRes.json();
+            
+            if (cleanersData.success) {
+                const cleaners = cleanersData.data;
+                document.getElementById('totalCleaners').textContent = cleaners.length;
+                
+                document.getElementById('cleanersTable').innerHTML = cleaners.map(c => `
+                    <tr>
+                        <td>${c.id}</td>
+                        <td>${c.name}</td>
+                        <td>${c.phone}</td>
+                        <td>${c.total_jobs}</td>
+                        <td>⭐ ${c.rating}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Properties
+            const propsRes = await fetch(API + '/properties');
+            const propsData = await propsRes.json();
+            
+            if (propsData.success) {
+                document.getElementById('totalProperties').textContent = propsData.data.length;
+            }
+        }
+        
+        async function deleteOrder(id) {
+            if (!confirm('確定刪除訂單？')) return;
+            
+            // In real app, implement delete endpoint
+            showToast('刪除功能待實現');
+        }
+        
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

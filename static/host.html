@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartClean - 房東發單</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text-main); padding-bottom: 80px; }
+        
+        .header { background: linear-gradient(135deg, var(--success), #059669); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 24px; font-weight: 700; }
+        
+        .nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; border-top: 1px solid var(--border); z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px; cursor: pointer; }
+        .nav-item.active { color: var(--success); }
+        .nav-item .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        
+        .page { display: none; padding: 16px; }
+        .page.active { display: block; }
+        
+        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-muted); font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; }
+        
+        .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; }
+        .btn-primary { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        
+        .order-card { border-left: 4px solid var(--success); }
+        .order-card.accepted { border-left-color: var(--primary); }
+        .order-card.arrived { border-left-color: var(--warning); }
+        .order-card.completed { border-left-color: var(--text-muted); }
+        
+        .order-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .order-price { font-size: 20px; font-weight: 800; color: var(--success); }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .status-open { background: #d1fae5; color: #065f46; }
+        .status-accepted { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #f1f5f9; color: #475569; }
+        
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+        .toast.show { opacity: 1; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 400px; }
+        
+        .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+        .photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🏠 SmartClean 房東發單</h1>
+    </header>
+    
+    <!-- Create Order -->
+    <div id="pageCreate" class="page active">
+        <div class="card">
+            <h3 style="margin-bottom: 16px;">📝 發布新訂單</h3>
+            
+            <div class="form-group">
+                <label>房源名稱</label>
+                <input type="text" id="propName" placeholder="例如：市中心公寓">
+            </div>
+            
+            <div class="form-group">
+                <label>房源地址</label>
+                <input type="text" id="propAddress" placeholder="完整地址">
+            </div>
+            
+            <div class="form-group">
+                <label>金額 ($)</label>
+                <input type="number" id="price" placeholder="150" value="150">
+            </div>
+            
+            <div class="form-group">
+                <label>退房時間</label>
+                <input type="datetime-local" id="checkoutTime">
+            </div>
+            
+            <div class="form-group">
+                <label>備註</label>
+                <textarea id="notes" rows="3" placeholder="額外要求..."></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="createOrder()">🚀 發布訂單</button>
+        </div>
+    </div>
+    
+    <!-- My Orders -->
+    <div id="pageOrders" class="page">
+        <div id="ordersList">
+            <div class="empty-state">載入中...</div>
+        </div>
+    </div>
+    
+    <!-- Properties -->
+    <div id="pageProps" class="page">
+        <div class="card">
+            <h3 style="margin-bottom: 16px;">🏠 我的房源</h3>
+            <div class="form-group">
+                <label>房源名稱</label>
+                <input type="text" id="newPropName" placeholder="房源名稱">
+            </div>
+            <div class="form-group">
+                <label>地址</label>
+                <input type="text" id="newPropAddress" placeholder="地址">
+            </div>
+            <button class="btn btn-primary" onclick="createProperty()">➕ 添加房源</button>
+        </div>
+        
+        <div id="propsList"></div>
+    </div>
+    
+    <!-- Profile -->
+    <div id="pageProfile" class="page">
+        <div class="card">
+            <h3>👤 個人資料</h3>
+            <div id="profileInfo"></div>
+        </div>
+        <button class="btn btn-danger" onclick="logout()">🚪 登出</button>
+    </div>
+    
+    <!-- Nav -->
+    <nav class="nav">
+        <div class="nav-item active" onclick="showPage('pageCreate', this)">
+            <span class="icon">✏️</span>發單
+        </div>
+        <div class="nav-item" onclick="showPage('pageOrders', this); loadOrders()">
+            <span class="icon">📋</span>訂單
+        </div>
+        <div class="nav-item" onclick="showPage('pageProps', this); loadProperties()">
+            <span class="icon">🏠</span>房源
+        </div>
+        <div class="nav-item" onclick="showPage('pageProfile', this)">
+            <span class="icon">👤</span>個人
+        </div>
+    </nav>
+    
+    <div class="toast" id="toast"></div>
+    
+    <!-- Login Modal -->
+    <div class="modal-overlay show" id="loginModal">
+        <div class="modal">
+            <h3>🔐 房東登入</h3>
+            <input type="text" id="loginPhone" placeholder="手機號" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">
+            <input type="password" id="loginPassword" placeholder="密碼" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">
+            <button class="btn btn-primary" onclick="login()">登入</button>
+            <p style="margin-top:12px;text-align:center;font-size:14px;">還沒有帳號？<a href="#" onclick="showRegister()">註冊</a></p>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin + '/api';
+        let hostId = localStorage.getItem('hostId');
+        let hostName = localStorage.getItem('hostName');
+        let token = localStorage.getItem('token');
+        
+        if (hostId) {
+            document.getElementById('loginModal').classList.remove('show');
+            loadOrders();
+            loadProperties();
+        }
+        
+        async function login() {
+            const phone = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const res = await fetch(API + '/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({phone, password, user_type: 'host'})
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                token = data.data.token;
+                hostId = data.data.user_id;
+                hostName = data.data.name;
+                localStorage.setItem('token', token);
+                localStorage.setItem('hostId', hostId);
+                localStorage.setItem('hostName', hostName);
+                document.getElementById('loginModal').classList.remove('show');
+                loadOrders();
+                loadProperties();
+            } else {
+                showToast(data.message || '登入失敗');
+            }
+        }
+        
+        function showRegister() {
+            const phone = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+            // Quick register
+            fetch(API + '/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: phone, phone, password, user_type: 'host'})
+            }).then(r => r.json()).then(d => {
+                if (d.success) showToast('註冊成功，請登入');
+                else showToast(d.message || '註冊失敗');
+            });
+        }
+        
+        function logout() { localStorage.clear(); location.reload(); }
+        
+        async function createOrder() {
+            const property_id = document.getElementById('propertySelect')?.value || 1;
+            const price = parseFloat(document.getElementById('price').value);
+            const checkout_time = document.getElementById('checkoutTime').value;
+            const text_notes = document.getElementById('notes').value;
+            
+            if (!price || !checkout_time) {
+                showToast('請填寫必填欄位');
+                return;
+            }
+            
+            const res = await fetch(API + '/orders', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    property_id,
+                    price,
+                    checkout_time,
+                    text_notes,
+                    host_id: parseInt(hostId),
+                    host_name: hostName
+                })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                showToast('訂單發布成功！');
+                document.getElementById('price').value = '150';
+                document.getElementById('notes').value = '';
+                loadOrders();
+            } else {
+                showToast(data.message || '發布失敗');
+            }
+        }
+        
+        async function loadOrders() {
+            const res = await fetch(API + '/orders');
+            const data = await res.json();
+            
+            if (!data.success) {
+                document.getElementById('ordersList').innerHTML = '<div class="empty-state">載入失敗</div>';
+                return;
+            }
+            
+            const orders = data.data.filter(o => o.host_id == hostId);
+            
+            if (!orders.length) {
+                document.getElementById('ordersList').innerHTML = '<div class="empty-state">暫無訂單</div>';
+                return;
+            }
+            
+            document.getElementById('ordersList').innerHTML = orders.reverse().map(o => `
+                <div class="card order-card ${o.status}">
+                    <div class="order-header">
+                        <div class="prop-name">${o.property_name || '房源'}</div>
+                        <div class="order-price">$${o.price}</div>
+                    </div>
+                    <div style="font-size:14px;color:var(--text-muted);">📍 ${o.property_address || '-'}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">🕐 退房: ${formatTime(o.checkout_time)}</div>
+                    <div style="margin-top:8px;">
+                        <span class="status-badge status-${o.status}">${o.status}</span>
+                        ${o.cleaner_name ? `<span style="margin-left:8px;">👤 ${o.cleaner_name}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function createProperty() {
+            const name = document.getElementById('newPropName').value;
+            const address = document.getElementById('newPropAddress').value;
+            
+            if (!name || !address) {
+                showToast('請填寫完整');
+                return;
+            }
+            
+            const res = await fetch(API + '/properties', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, address, host_id: parseInt(hostId)})
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                showToast('房源添加成功');
+                document.getElementById('newPropName').value = '';
+                document.getElementById('newPropAddress').value = '';
+                loadProperties();
+            }
+        }
+        
+        async function loadProperties() {
+            const res = await fetch(API + '/properties?host_id=' + hostId);
+            const data = await res.json();
+            
+            if (!data.success) return;
+            
+            const props = data.data;
+            
+            if (props.length) {
+                // Add property select to create form
+                let selectHtml = '<div class="form-group"><label>選擇房源</label><select id="propertySelect">' + 
+                    props.map(p => `<option value="${p.id}">${p.name}</option>`).join('') + 
+                    '</select></div>';
+                document.getElementById('propName').parentElement.innerHTML = selectHtml + document.getElementById('propName').parentElement.innerHTML;
+            }
+            
+            document.getElementById('propsList').innerHTML = props.map(p => `
+                <div class="card">
+                    <div style="font-weight:700;">${p.name}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">📍 ${p.address}</div>
+                </div>
+            `).join('');
+        }
+        
+        function showPage(pageId, navEl) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            navEl.classList.add('active');
+        }
+        
+        function formatTime(isoString) {
+            if (!isoString) return '-';
+            try {
+                const d = new Date(isoString);
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            } catch(e) { return isoString; }
+        }
+        
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
