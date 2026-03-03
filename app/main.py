@@ -4,11 +4,13 @@ SmartClean - 核彈級優化版清潔服務平台
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.response import ORJSONResponse
-from app.core.websocket import get_redis
+from app.core.websocket import get_redis, manager
 
 
 settings = get_settings()
@@ -38,7 +40,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version="2.0.0",
-    default_response_class=ORJSONResponse,  # 全域 ORJSON
+    default_response_class=ORJSONResponse,
     lifespan=lifespan,
 )
 
@@ -62,7 +64,24 @@ async def health():
     return {"status": "ok"}
 
 
+# 靜態文件
+import os
+upload_dir = settings.UPLOAD_DIR
+os.makedirs(f"{upload_dir}/images", exist_ok=True)
+os.makedirs(f"{upload_dir}/voices", exist_ok=True)
+
+app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
+
+
 # 路由
-from app.api import orders, auth
+from app.api import orders, auth, properties, cleaners, order_status, upload
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(properties.router, prefix="/api/properties", tags=["Properties"])
+app.include_router(cleaners.router, prefix="/api/cleaners", tags=["Cleaners"])
+app.include_router(order_status.router, prefix="/api/orders", tags=["Order Status"])
+app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
+
+# WebSocket
+from app.api.orders import websocket_orders
+app.add_api_websocket_route("/api/orders/ws/orders", websocket_orders)
