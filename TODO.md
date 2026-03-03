@@ -3,72 +3,56 @@
 ## 目標
 核彈級優化的清潔服務平台，從 cleaning_service_fastapi 進化而來。
 
-## 架構
-
-### 後端
-- **FastAPI** + **Granian** (Rust ASGI)
-- **PostgreSQL** + **PostGIS**
-- **Redis** + **PgBouncer**
-- **Arq/Taskiq** (異步任務)
-
-### 前端
-- 移動端優先的 Web App
-- 搶單大廳 (即時更新)
-- 房東發單系統
-
 ---
 
-## ✅ 已完成 (All Phases)
+## ✅ 已完成
 
-### Phase 1: 引擎內核 ✅
-- ✅ ORJSON 全域響應
-- ✅ asyncpg 異步步驅
-- ⏳ Granian (需進一步配置)
-- ⏳ jemalloc/tcmalloc
-
-### Phase 2: 資料庫 ✅
-- ✅ 樂觀鎖 (version 欄位)
-- ⏳ PgBouncer (需 Docker 部署)
-- ⏳ PostGIS (需數據庫支持)
-
-### Phase 3: 快取/即時 ✅
-- ✅ Redis Pub/Sub 廣播
-- ✅ 兩級快取 + 防擊穿
-- ✅ WebSocket
-
-### Phase 4: 任務隊列 ✅
-- ✅ Arq
-
-### Phase 5: 基礎設施 ✅
-- ✅ Idempotency Key
-- ✅ Rate Limiting
-- ✅ Nginx HTTP/3
-- ✅ Docker Compose
-
----
-
-## 🔲 待辦 (TODO)
-
-### 後端
-- [x] 房源管理 API (Property CRUD)
-- [x] 清潔工位置更新 API
-- [x] 訂單狀態更新 API (arrived/completed)
-- [x] 圖片上傳 API
+### 後端 API
+- [x] 訂單管理 (CRUD + 樂觀鎖搶單)
+- [x] 房源管理 (Property CRUD)
+- [x] 清潔工管理 (位置/狀態更新)
+- [x] 認證 (JWT + bcrypt)
+- [x] 圖片/語音上傳 (Pillow 壓縮)
 
 ### 前端
-- [x] 搶單大廳頁面 (cleaner.html)
-- [x] 房東發單頁面 (host.html)
-- [x] 管理員頁面 (admin.html)
+- [x] cleaner.html - 搶單大廳
+- [x] host.html - 房東發單
+- [x] admin.html - 管理後台
+
+### 優化
+- [x] ORJSON 響應
+- [x] asyncpg 異步驅動
+- [x] Redis Pub/Sub 廣播
+- [x] 兩級快取 + 防擊穿
+- [x] 樂觀鎖
+- [x] Idempotency Key
+- [x] Rate Limiting
+- [x] Docker Compose 配置
 
 ### 部署
-- [ ] 測試環境部署
-- [ ] PostgreSQL + Redis 初始化
-- [ ] 生產環境部署
+- [x] PostgreSQL 數據庫
+- [x] Redis 緩存
+- [x] API 運行中 (port 80)
 
 ---
 
-## 開發日誌
+## 🔲 待辦
 
-### 2026-03-03
-- 項目創建並推送至 GitHub
-- 所有 5 個 Phase 代碼完成
+### 可選優化
+- [ ] Granian (Rust ASGI) - 需額外配置
+- [ ] jemalloc/tcmalloc - 需系統級安裝
+- [ ] PgBouncer - 需 Docker 部署
+- [ ] PostGIS - 需數據庫 Extension
+
+### 功能擴展
+- [ ] 通知系統 (Arq tasks)
+- [ ] 支付集成
+- [ ] 評價系統
+- [ ] 統計分析
+
+---
+
+## 當前狀態
+- ✅ 運行中: http://localhost
+- ✅ 數據庫: PostgreSQL smartclean
+- ✅ 緩存: Redis
