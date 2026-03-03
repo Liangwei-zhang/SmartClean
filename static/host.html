@@ -348,6 +348,10 @@
             addrList.innerHTML = props.map(p => `<option value="${p.address}">`).join('');
             
             if (props.length) {
+                // Remove old select if exists
+                const oldSelect = document.getElementById('propertySelect');
+                if (oldSelect) oldSelect.remove();
+                
                 // Add property select to create form
                 let selectHtml = '<div class="form-group"><label>選擇房源</label><select id="propertySelect" onchange="fillPropertyAddress()">' + 
                     props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('') + 
