@@ -18,11 +18,16 @@ redis_client: redis.Redis = None
 async def get_redis() -> redis.Redis:
     global redis_client
     if redis_client is None:
-        redis_client = redis.from_url(
-            settings.REDIS_URL,
-            encoding="utf-8",
-            decode_responses=True
-        )
+        try:
+            redis_client = redis.from_url(
+                settings.REDIS_URL,
+                encoding="utf-8",
+                decode_responses=True,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+            )
+        except Exception:
+            return None
     return redis_client
 
 

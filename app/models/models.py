@@ -1,6 +1,5 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Field
 from sqlalchemy import Column, String, Integer, Float, DateTime, Enum as SQLEnum, Text, Index
-from sqlalchemy.sql import func
 from datetime import datetime
 from typing import Optional
 from enum import Enum
@@ -44,7 +43,7 @@ class Property(SQLModel, table=True):
     notes: Optional[str] = Field(default=None)
     
     status: str = Field(default="active")  # active/inactive
-    created_at: Optional[datetime] = Field(default_factory=func.now)
+    created_at: Optional[datetime] = Field(default=None)
     
     # 空間索引 (PostGIS)
     __table_args__ = (
@@ -88,8 +87,8 @@ class Order(SQLModel, table=True):
     
     accepted_by_host: bool = Field(default=False)
     
-    created_at: Optional[datetime] = Field(default_factory=func.now())
-    updated_at: Optional[datetime] = Field(default_factory=func.now(), sa_column_kwargs={"onupdate": func.now()})
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
     
     __table_args__ = (
         Index('idx_order_status', 'status'),
@@ -120,8 +119,8 @@ class Cleaner(SQLModel, table=True):
     # 狀態
     status: str = Field(default="offline")  # online/offline/busy
     
-    created_at: Optional[datetime] = Field(default_factory=func.now())
-    updated_at: Optional[datetime] = Field(default_factory=func.now(), sa_column_kwargs={"onupdate": func.now()})
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
     
     __table_args__ = (
         Index('idx_cleaner_status', 'status'),
@@ -138,4 +137,4 @@ class User(SQLModel, table=True):
     email: Optional[str] = Field(default=None, max_length=200)
     password_hash: str
     
-    created_at: Optional[datetime] = Field(default_factory=func.now())
+    created_at: Optional[datetime] = Field(default=None)
