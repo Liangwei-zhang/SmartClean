@@ -332,7 +332,7 @@
                 return;
             }
             
-            const orders = data.data.filter(o => o.cleaner_id == cleanerId && o.status !== 'completed');
+            const orders = data.data.filter(o => Number(o.cleaner_id) === Number(cleanerId) && o.status !== 'completed');
             
             document.getElementById('myOrdersList').innerHTML = orders.length ? 
                 orders.reverse().map(o => renderOrderCard(o, false)).join('') :
