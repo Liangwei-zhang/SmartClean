@@ -13,6 +13,16 @@ from app.core.websocket import manager
 from app.models.models import Order, OrderStatus, Cleaner
 from pydantic import BaseModel
 
+
+def serialize_order(o):
+    """將訂單轉為可序列化的字典"""
+    data = o.model_dump() if hasattr(o, 'model_dump') else o.__dict__
+    for k, v in data.items():
+        if hasattr(v, 'isoformat'):
+            data[k] = v.isoformat()
+    return data
+
+
 router = APIRouter()
 
 
@@ -48,7 +58,7 @@ async def list_orders(
     result = await db.execute(query)
     orders = result.scalars().all()
     
-    return success_response(data=[o.model_dump() for o in orders])
+    return success_response(data=[serialize_order(o) for o in orders])
 
 
 @router.post("")
@@ -76,13 +86,15 @@ async def create_order(req: CreateOrderRequest, db: AsyncSession = Depends(get_d
     await db.commit()
     await db.refresh(order)
     
-    # 🔥 廣播新訂單
+    # 🔥 廣播新訂單 (轉為字典型)
+    order_data = serialize_order(order)
+    
     await manager.broadcast("orders", {
         "type": "new_order",
-        "data": order.model_dump()
+        "data": order_data
     })
     
-    return success_response(data=order.model_dump(), message="訂單創建成功")
+    return success_response(data=serialize_order(order), message="訂單創建成功")
 
 
 @router.post("/{order_id}/accept")
@@ -140,9 +152,11 @@ async def accept_order(
     updated_order = result.scalar_one()
     
     # 🔥 廣播搶單結果
+    order_data = serialize_order(updated_order)
+    
     await manager.broadcast("orders", {
         "type": "order_accepted",
-        "data": updated_order.model_dump()
+        "data": order_data
     })
     
     return success_response(message="搶單成功")
@@ -159,7 +173,7 @@ async def get_order(order_id: int, db: AsyncSession = Depends(get_db)):
     if not order:
         raise HTTPException(status_code=404, detail="訂單不存在")
     
-    return success_response(data=order.model_dump())
+    return success_response(data=serialize_order(order))
 
 
 # --- WebSocket ---

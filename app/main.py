@@ -115,6 +115,9 @@ app.include_router(order_status.router, prefix="/api/orders", tags=["Order Statu
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 
+from app.api import stats
+app.include_router(stats.router, prefix="/api/stats", tags=["Stats"])
+
 # WebSocket
 from app.api.orders import websocket_orders
 app.add_api_websocket_route("/api/orders/ws/orders", websocket_orders)
