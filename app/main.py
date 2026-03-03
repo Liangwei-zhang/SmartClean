@@ -59,7 +59,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "SmartClean API", "version": "2.0.0"}
+    return FileResponse("static/cleaner.html")
 
 
 @app.get("/health")
