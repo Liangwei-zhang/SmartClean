@@ -1,0 +1,32 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+granian==1.4.2
+orjson==3.10.12
+
+# Database
+sqlmodel==0.0.21
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# Redis
+redis==5.2.0
+hiredis==3.1.0
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.4.7
+bcrypt==4.2.1
+
+# Utils
+python-multipart==0.0.20
+pillow==11.1.0
+pydantic-settings==2.7.0
+httpx==0.28.1
+
+# Cache
+cachetools==5.5.0
+
+# Task Queue (Arq)
+arq==0.24.1

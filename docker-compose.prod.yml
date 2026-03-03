@@ -1,0 +1,107 @@
+# SmartClean 生產環境部署
+# docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  # PostgreSQL + PostGIS
+  postgres:
+    image: postgis/postgis:15-3.4
+    container_name: smartclean_db
+    environment:
+      POSTGRES_USER: nico
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: smartclean
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nico"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgBouncer - 連接池
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: smartclean_pgbouncer
+    environment:
+      DATABASE: smartclean
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 25
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 10
+      USERS: nico/password
+    ports:
+      - "6432:5432"
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pgbouncer -h pgbouncer -p 6432 -u postgres -d smartclean -c 'SHOW VERSION;'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: smartclean_redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # SmartClean API
+  api:
+    build: .
+    container_name: smartclean_api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 80 --workers 4
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nico:password@pgbouncer:6432/smartclean
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+    ports:
+      - "80:80"
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Arq Worker
+  worker:
+    build: .
+    container_name: smartclean_worker
+    command: python -m arq app.tasks.worker.WorkerSettings
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nico:password@pgbouncer:6432/smartclean
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Nginx + HTTP/3
+  nginx:
+    image: nginx:alpine
+    container_name: smartclean_nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
