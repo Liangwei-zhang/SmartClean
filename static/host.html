@@ -348,15 +348,15 @@
             addrList.innerHTML = props.map(p => `<option value="${p.address}">`).join('');
             
             if (props.length) {
-                // Remove old select if exists
-                const oldSelect = document.getElementById('propertySelect');
-                if (oldSelect) oldSelect.remove();
-                
-                // Add property select to create form
-                let selectHtml = '<div class="form-group"><label>選擇房源</label><select id="propertySelect" onchange="fillPropertyAddress()">' + 
-                    props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('') + 
-                    '</select></div>';
-                document.getElementById('propName').parentElement.innerHTML = selectHtml + document.getElementById('propName').parentElement.innerHTML;
+                // Only add once using unique ID
+                if (!document.getElementById('propertySelectContainer')) {
+                    const container = document.createElement('div');
+                    container.id = 'propertySelectContainer';
+                    container.innerHTML = '<div class="form-group"><label>選擇房源</label><select id="propertySelect" onchange="fillPropertyAddress()">' + 
+                        props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('') + 
+                        '</select></div>';
+                    document.getElementById('newPropName').parentNode.prepend(container);
+                }
             }
             
             document.getElementById('propsList').innerHTML = props.map(p => `
