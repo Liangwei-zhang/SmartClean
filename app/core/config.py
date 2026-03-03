@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://nico:password@localhost:5432/smartclean"
-    DATABASE_URL_SYNC: str = "postgresql://nico:password@localhost:5432/smartclean"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cleaning")
+    DATABASE_URL_SYNC: str = os.getenv("DATABASE_URL_SYNC", "postgresql://postgres:postgres@localhost:5432/cleaning")
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
