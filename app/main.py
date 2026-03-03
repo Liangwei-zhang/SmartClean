@@ -1,6 +1,7 @@
 """
 SmartClean - 核彈級優化版清潔服務平台
 """
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,8 @@ from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.response import ORJSONResponse
 from app.core.websocket import get_redis, manager
+
+logger = logging.getLogger(__name__)
 
 
 settings = get_settings()
@@ -26,14 +29,14 @@ async def lifespan(app: FastAPI):
     try:
         r = await get_redis()
         await r.ping()
-        print("✅ Redis 連接成功")
+        logger.info("✅ Redis 連接成功")
     except Exception as e:
-        print(f"⚠️ Redis 連接失敗: {e}")
+        logger.warning(f"⚠️ Redis 連接失敗: {e}")
     
-    print("🚀 SmartClean 引擎啟動 (ORJSON + Granian + Redis)")
+    logger.info("🚀 SmartClean 引擎啟動 (ORJSON + Granian + Redis)")
     yield
     # 關閉
-    print("🛑 SmartClean 引擎關閉")
+    logger.info("🛑 SmartClean 引擎關閉")
 
 
 # 創建應用

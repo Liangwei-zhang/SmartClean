@@ -50,10 +50,10 @@
 ## 🔲 待辦 (TODO)
 
 ### 後端
-- [ ] 房源管理 API (Property CRUD)
-- [ ] 清潔工位置更新 API
-- [ ] 訂單狀態更新 API (arrived/completed)
-- [ ] 圖片上傳 API
+- [x] 房源管理 API (Property CRUD)
+- [x] 清潔工位置更新 API
+- [x] 訂單狀態更新 API (arrived/completed)
+- [x] 圖片上傳 API
 
 ### 前端
 - [ ] 搶單大廳頁面 (cleaner.html)

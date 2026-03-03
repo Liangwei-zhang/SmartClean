@@ -3,6 +3,7 @@ Arq 任務隊列 - 替換 Celery
 比 Celery 快數倍，完美融合 FastAPI
 """
 import asyncio
+import logging
 from datetime import datetime
 from arq import create_pool, Actor
 from arq.connections import RedisSettings
@@ -10,24 +11,25 @@ from arq.connections import RedisSettings
 from app.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 # --- 任務定義 ---
 async def send_notification(ctx, user_id: int, title: str, body: str):
     """發送通知任務"""
     # 實現通知邏輯 (推送/郵件等)
-    print(f"📱 通知用戶 {user_id}: {title} - {body}")
+    logger.info(f"📱 通知用戶 {user_id}: {title} - {body}")
 
 
 async def cleanup_old_orders(ctx, days: int = 30):
     """清理舊訂單"""
-    print(f"🧹 清理 {days} 天前的訂單")
+    logger.info(f"🧹 清理 {days} 天前的訂單")
     # 實現清理邏輯
 
 
 async def sync_cleaner_location(ctx, cleaner_id: int, lat: float, lng: float):
     """同步清潔工位置"""
-    print(f"📍 清潔工 {cleaner_id} 位置: {lat}, {lng}")
+    logger.info(f"📍 清潔工 {cleaner_id} 位置: {lat}, {lng}")
     # 實現位置同步邏輯
 
 

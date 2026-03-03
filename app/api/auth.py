@@ -44,11 +44,13 @@ def create_access_token(data: dict) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    # bcrypt 限制 72 字符
+    return pwd_context.verify(plain[:72], hashed)
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    # bcrypt 限制 72 字符
+    return pwd_context.hash(password[:72])
 
 
 @router.post("/login")
