@@ -203,6 +203,8 @@ async def accept_order(
     return success_response(message="搶單成功")
 
 
+@router.patch("/{order_id}")
+@router.put("/{order_id}")
 @router.get("/{order_id}")
 async def get_order(order_id: int, db: AsyncSession = Depends(get_db)):
     """訂單詳情"""
