@@ -1,7 +1,7 @@
 """
 Hosts API - 房東管理
 """
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Body, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.core.database import get_db
@@ -25,8 +25,8 @@ async def list_hosts(db: AsyncSession = Depends(get_db)):
 
 @router.post("")
 async def create_host(
-    name: str = Query(None),
-    phone: str = Query(None),
+    name: str = Body(None),
+    phone: str = Body(None),
     db: AsyncSession = Depends(get_db)
 ):
     """新增房東"""
