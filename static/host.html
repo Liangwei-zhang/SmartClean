@@ -227,39 +227,59 @@
             const phone = document.getElementById('loginPhone').value;
             const password = document.getElementById('loginPassword').value;
             
-            const res = await fetch(API + '/auth/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({phone, password, user_type: 'host'})
-            });
-            const data = await res.json();
+            if (!phone || !password) {
+                showToast('請輸入手機號和密碼');
+                return;
+            }
             
-            if (data.success) {
-                token = data.data.token;
-                hostId = data.data.user_id;
-                hostName = data.data.name;
-                localStorage.setItem('token', token);
-                localStorage.setItem('hostId', hostId);
-                localStorage.setItem('hostName', hostName);
-                document.getElementById('loginModal').classList.remove('show');
-                loadOrders();
-                loadProperties();
-            } else {
-                showToast(data.message || '登入失敗');
+            try {
+                const res = await fetch(API + '/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone, password, user_type: 'host'})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    token = data.data.token;
+                    hostId = data.data.user_id;
+                    hostName = data.data.name;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('hostId', hostId);
+                    localStorage.setItem('hostName', hostName);
+                    document.getElementById('loginModal').classList.remove('show');
+                    loadOrders();
+                    loadProperties();
+                } else {
+                    showToast(data.detail || '登入失敗');
+                }
+            } catch(e) {
+                showToast('網絡錯誤，請重試');
             }
         }
         
         function showRegister() {
             const phone = document.getElementById('loginPhone').value;
             const password = document.getElementById('loginPassword').value;
+            
+            if (!phone || !password) {
+                showToast('請輸入手機號和密碼');
+                return;
+            }
+            
             // Quick register
             fetch(API + '/auth/register', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({name: phone, phone, password, user_type: 'host'})
             }).then(r => r.json()).then(d => {
-                if (d.success) showToast('註冊成功，請登入');
-                else showToast(d.message || '註冊失敗');
+                if (d.success) {
+                    showToast('✅ 註冊成功，請登入');
+                } else {
+                    showToast(d.message || '註冊失敗');
+                }
+            }).catch(e => {
+                showToast('網絡錯誤');
             });
         }
         
