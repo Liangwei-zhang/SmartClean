@@ -1037,16 +1037,14 @@
             }
             const e = escapeHtml;
             const API = "/api";
-            const cleanerId = parseInt(localStorage.getItem('user_type') === 'cleaner' ? localStorage.getItem('user_id') : null);
+            const cleanerId = parseInt(localStorage.getItem('cleaner_id') || localStorage.getItem('user_id'));
             const cleanerCode = localStorage.getItem("cleaner_code");
 
             function haptic() {
                 if (navigator.vibrate) navigator.vibrate(20);
             }
 
-            var storedType = localStorage.getItem('user_type'); if (storedType !== 'cleaner') {
-                location.href = "cleaner.html";
-            }
+            // Skip redirect if cleanerId exists
             function logout() {
                 localStorage.clear();
                 location.href = "cleaner.html";
