@@ -20,6 +20,7 @@ async def list_hosts(db: AsyncSession = Depends(get_db)):
         "id": u.id,
         "name": u.name,
         "phone": u.phone,
+        "code": getattr(u, "code", None),
     } for u in users])
 
 

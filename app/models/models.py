@@ -106,6 +106,9 @@ class Cleaner(SQLModel, table=True):
     email: Optional[str] = Field(default=None, max_length=200)
     password_hash: str
     
+    # 邀請碼
+    code: Optional[str] = Field(default=None, max_length=20)
+    
     # 位置
     latitude: Optional[float] = Field(default=None)
     longitude: Optional[float] = Field(default=None)
@@ -139,5 +142,8 @@ class User(SQLModel, table=True):
     phone: str = Field(unique=True, max_length=50)
     email: Optional[str] = Field(default=None, max_length=200)
     password_hash: str
+    
+    # 邀請碼
+    code: Optional[str] = Field(default=None, max_length=20)
     
     created_at: Optional[datetime] = Field(default=None)
