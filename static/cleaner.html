@@ -312,9 +312,12 @@
                     const db = b.distance || 999999;
                     return currentSort.desc ? db - da : da - db;
                 } else {
+                    // Time sort - use checkout_time
+                    const timeA = a.checkout_time || '';
+                    const timeB = b.checkout_time || '';
                     return currentSort.desc ? 
-                        (b.created_at || '').localeCompare(a.created_at || '') :
-                        (a.created_at || '').localeCompare(b.created_at || '');
+                        timeB.localeCompare(timeA) :
+                        timeA.localeCompare(timeB);
                 }
             });
             
@@ -324,7 +327,7 @@
         async function loadMyOrders() {
             showLoading('myOrdersList');
             
-            const res = await fetch(API + '/orders');
+            const res = await fetch(API + '/orders?status=');
             const data = await res.json();
             
             if (!data.success) {
