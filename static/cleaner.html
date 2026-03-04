@@ -1183,8 +1183,8 @@
                     const data = await res.json();
                     let orders = (data.data || []).filter(
                         (o) =>
-                            o.status === "open" &&
-                            o.cleaner_id === null,
+                            (o.status === 'open' || o.status === 'OPEN') &&
+                            !o.cleaner_id
                     );
 
                     // 異步計算距離，完成後排序並顯示
