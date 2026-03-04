@@ -182,6 +182,12 @@ async def delete_cleaner(
     db: AsyncSession = Depends(get_db)
 ):
     """刪除清潔工"""
+    from app.models.models import Order
+    # 先清除訂單
+    await db.execute(
+        update(Order).where(Order.cleaner_id == cleaner_id).values(cleaner_id=None, cleaner_name=None)
+    )
+    
     result = await db.execute(
         select(Cleaner).where(Cleaner.id == cleaner_id)
     )
