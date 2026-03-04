@@ -10,6 +10,19 @@ from sqlalchemy import select
 from datetime import datetime, timedelta
 
 from app.core.config import get_settings
+async def generate_unique_code(db: AsyncSession, user_type: str) -> str:
+    """生成唯一邀請碼"""
+    chars = string.ascii_uppercase + string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=8))
+        # 檢查是否存在
+        if user_type == "cleaner":
+            result = await db.execute(select(Cleaner).where(Cleaner.code == code))
+        else:
+            result = await db.execute(select(User).where(User.code == code))
+        if not result.scalar_one_or_none():
+            return code
+
 from app.core.database import get_db
 from app.core.response import success_response, error_response
 from app.models.models import Cleaner, User
@@ -98,22 +111,27 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="手機號已註冊")
     
+    # 生成唯一邀請碼
+    code = await generate_unique_code(db, req.user_type)
+    
     # 創建用戶
     if req.user_type == "cleaner":
         user = Cleaner(
             name=req.name,
             phone=req.phone,
             password_hash=get_password_hash(req.password),
+            code=code,
         )
     else:
         user = User(
             name=req.name,
             phone=req.phone,
             password_hash=get_password_hash(req.password),
+            code=code,
         )
     
     db.add(user)
     await db.commit()
     await db.refresh(user)
     
-    return success_response(data={"id": user.id}, message="註冊成功")
+    return success_response(data={"id": user.id, "code": code}, message="註冊成功")

@@ -2,138 +2,213 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartClean | 登錄</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartClean - 登入</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
-        .container { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 20px; 
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 360px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 400px;
         }
-        h1 { text-align: center; margin-bottom: 30px; color: #333; }
-        .btn { 
-            width: 100%; 
-            padding: 15px; 
-            margin: 10px 0; 
-            border: none; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            font-weight: 600; 
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            font-size: 28px;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        .user-type-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
         }
-        .btn:active { transform: scale(0.98); }
-        .btn-host { background: #10b981; color: white; }
-        .btn-cleaner { background: #3b82f6; color: white; }
-        .btn-admin { background: #6366f1; color: white; }
-        .btn-logout { background: #ef4444; color: white; margin-top: 20px; }
-        .user-info { 
-            text-align: center; 
-            padding: 20px; 
-            background: #f3f4f6; 
-            border-radius: 10px; 
-            margin-bottom: 20px;
+        .tab.active {
+            background: white;
+            color: #4f46e5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .hidden { display: none; }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-login:hover {
+            background: #4338ca;
+        }
+        .btn-login:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .test-accounts {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5e5;
+        }
+        .test-accounts h3 {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+        .test-accounts p {
+            font-size: 12px;
+            color: #666;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🏠 SmartClean</h1>
-        
-        <!-- Not logged in -->
-        <div id="loginPage">
-            <button class="btn btn-host" onclick="loginAs('host')">🏠 房東登入</button>
-            <button class="btn btn-cleaner" onclick="loginAs('cleaner')">👷 清潔員登入</button>
-            <button class="btn btn-admin" onclick="loginAs('admin')">⚙️ 管理員登入</button>
+    <div class="login-card">
+        <div class="logo">
+            <h1>🏠 SmartClean</h1>
+            <p>清潔服務管理平台</p>
         </div>
         
-        <!-- Logged in -->
-        <div id="userPage" class="hidden">
-            <div class="user-info">
-                <p>已登入為: <strong id="userName">-</strong></p>
-                <p>類型: <span id="userType">-</span></p>
+        <div class="user-type-tabs">
+            <button class="tab active" data-type="host">🏠 房東</button>
+            <button class="tab" data-type="cleaner">👷 清潔員</button>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label>手機號</label>
+                <input type="tel" id="phone" placeholder="輸入手機號" required>
             </div>
-            <button class="btn btn-host" onclick="goToPage('host')">🏠 進入房東頁面</button>
-            <button class="btn btn-cleaner" onclick="goToPage('cleaner')">👷 進入清潔員頁面</button>
-            <button class="btn btn-admin" onclick="goToPage('admin')">⚙️ 進入管理頁面</button>
-            <button class="btn btn-logout" onclick="logout()">🚪 登出</button>
+            <div class="form-group">
+                <label>密碼</label>
+                <input type="password" id="password" placeholder="輸入密碼" required>
+            </div>
+            <button type="submit" class="btn-login" id="loginBtn">登 入</button>
+            <div class="error" id="errorMsg"></div>
+        </form>
+        
+        <div class="test-accounts">
+            <h3>測試帳號</h3>
+            <p>房東: 888888 / 123456</p>
+            <p>清潔員: 12345678 / 123456</p>
         </div>
     </div>
-
+    
     <script>
         const API = '/api';
+        let userType = 'host';
         
-        // Check login status on load
-        window.onload = function() {
-            const userType = localStorage.getItem('user_type');
-            const userName = localStorage.getItem('user_name');
-            
-            if (userType) {
-                document.getElementById('loginPage').classList.add('hidden');
-                document.getElementById('userPage').classList.remove('hidden');
-                document.getElementById('userName').textContent = userName || '用戶';
-                document.getElementById('userType').textContent = userType === 'host' ? '房東' : userType === 'cleaner' ? '清潔員' : '管理員';
-            }
-        };
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                userType = tab.dataset.type;
+            });
+        });
         
-        async function loginAs(type) {
-            const phone = prompt('請輸入手機號:');
-            if (!phone) return;
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
             
-            const password = prompt('請輸入密碼:');
-            if (!password) return;
+            btn.disabled = true;
+            btn.textContent = '登入中...';
+            errorMsg.textContent = '';
             
             try {
                 const res = await fetch(API + '/auth/login', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({phone, password, user_type: type})
+                    body: JSON.stringify({phone, password, user_type: userType})
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    localStorage.setItem('user_type', type);
+                    localStorage.setItem('user_type', userType);
                     localStorage.setItem('user_name', data.data.name);
                     localStorage.setItem('user_id', data.data.user_id);
                     localStorage.setItem('token', data.data.token);
-                    if (type === 'host') localStorage.setItem('host_phone', data.data.phone);
-                    if (type === 'cleaner') localStorage.setItem('cleaner_id', data.data.user_id);
+                    if (userType === 'host') localStorage.setItem('host_phone', data.data.phone);
+                    if (userType === 'cleaner') localStorage.setItem('cleaner_id', data.data.user_id);
                     
-                    // Redirect to appropriate page
-                    if (type === 'host') window.location.href = 'host.html';
-                    else if (type === 'cleaner') window.location.href = 'cleaner.html';
+                    if (userType === 'host') window.location.href = 'host.html';
+                    else if (userType === 'cleaner') window.location.href = 'cleaner.html';
                     else window.location.href = 'admin.html';
                 } else {
-                    alert('登入失敗: ' + (data.detail || data.message));
+                    errorMsg.textContent = data.detail || '登入失敗';
                 }
             } catch(e) {
-                alert('網絡錯誤');
+                errorMsg.textContent = '網絡錯誤';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '登 入';
             }
-        }
-        
-        function goToPage(type) {
-            if (type === 'host') window.location.href = 'host.html';
-            else if (type === 'cleaner') window.location.href = 'cleaner.html';
-            else window.location.href = 'admin.html';
-        }
-        
-        function logout() {
-            localStorage.clear();
-            location.reload();
-        }
+        });
     </script>
 </body>
 </html>

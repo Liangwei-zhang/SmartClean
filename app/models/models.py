@@ -119,6 +119,9 @@ class Cleaner(SQLModel, table=True):
     # 狀態
     status: str = Field(default="offline")  # online/offline/busy
     
+    # 邀請碼
+    code: Optional[str] = Field(default=None, max_length=20)
+    
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     
