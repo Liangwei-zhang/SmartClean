@@ -118,14 +118,50 @@
     
     <div id="pageProps" class="page">
         <div class="card">
-            <h3 style="margin-bottom: 16px;">🏠 我的房源</h3>
+            <h3 style="margin-bottom: 16px;">🏠 添加房源</h3>
             <div class="form-group">
-                <label>房源名稱</label>
-                <input type="text" id="newPropName" placeholder="房源名稱" list="propertyNames">
+                <label>房源名稱 *</label>
+                <input type="text" id="newPropName" placeholder="例如：市中心公寓" list="propertyNames">
             </div>
             <div class="form-group">
-                <label>地址</label>
-                <input type="text" id="newPropAddress" placeholder="地址" list="addressSuggestions" onchange="searchAddress()">
+                <label>地址搜索 *</label>
+                <input type="text" id="newPropAddress" placeholder="輸入地址搜索" list="addressSuggestions" onchange="searchAddress()">
+            </div>
+            <div class="form-group">
+                <label>省</label>
+                <input type="text" id="newProvince" placeholder="省">
+            </div>
+            <div class="form-group">
+                <label>市</label>
+                <input type="text" id="newCity" placeholder="市">
+            </div>
+            <div class="form-group">
+                <label>街道</label>
+                <input type="text" id="newStreet" placeholder="街道">
+            </div>
+            <div class="form-group">
+                <label>門牌號</label>
+                <input type="text" id="newHouseNumber" placeholder="門牌號">
+            </div>
+            <div class="form-group">
+                <label>郵編</label>
+                <input type="text" id="newPostalCode" placeholder="郵編">
+            </div>
+            <div class="form-group">
+                <label>臥室數量</label>
+                <input type="number" id="newBedrooms" placeholder="1" value="1">
+            </div>
+            <div class="form-group">
+                <label>衛生間數量</label>
+                <input type="number" id="newBathrooms" placeholder="1" value="1">
+            </div>
+            <div class="form-group">
+                <label>面積 (sqft)</label>
+                <input type="number" id="newArea" placeholder="1000">
+            </div>
+            <div class="form-group">
+                <label>樓層</label>
+                <input type="number" id="newFloor" placeholder="1">
             </div>
             <button class="btn btn-primary" onclick="createProperty()">➕ 添加房源</button>
         </div>
@@ -311,21 +347,42 @@
             const address = document.getElementById('newPropAddress').value;
             
             if (!name || !address) {
-                showToast('請填寫完整');
+                showToast('請填寫房源名稱和地址');
                 return;
             }
+            
+            const propData = {
+                name,
+                address,
+                host_id: parseInt(hostId),
+                province: document.getElementById('newProvince').value || null,
+                city: document.getElementById('newCity').value || null,
+                street: document.getElementById('newStreet').value || null,
+                house_number: document.getElementById('newHouseNumber').value || null,
+                postal_code: document.getElementById('newPostalCode').value || null,
+                bedrooms: parseInt(document.getElementById('newBedrooms').value) || 1,
+                bathrooms: parseInt(document.getElementById('newBathrooms').value) || 1,
+                area: parseFloat(document.getElementById('newArea').value) || null,
+                floor: parseInt(document.getElementById('newFloor').value) || null,
+            };
             
             const res = await fetch(API + '/properties', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name, address, host_id: parseInt(hostId)})
+                body: JSON.stringify(propData)
             });
             
             const data = await res.json();
             if (data.success) {
                 showToast('房源添加成功');
+                // Clear form
                 document.getElementById('newPropName').value = '';
                 document.getElementById('newPropAddress').value = '';
+                ['newProvince','newCity','newStreet','newHouseNumber','newPostalCode','newArea','newFloor'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                document.getElementById('newBedrooms').value = '1';
+                document.getElementById('newBathrooms').value = '1';
                 loadProperties();
             }
         }
@@ -349,7 +406,19 @@
                 const select = document.getElementById('propertySelect');
                 if (select) {
                     select.innerHTML = '<option value="">-- 請選擇房源 --</option>' + 
-                        props.map(p => `<option value="${p.id}" data-name="${p.name}" data-addr="${p.address}">${p.name}</option>`).join('');
+                        props.map(p => `<option value="${p.id}" 
+                            data-name="${p.name}" 
+                            data-addr="${p.address}"
+                            data-province="${p.province || ''}"
+                            data-city="${p.city || ''}"
+                            data-street="${p.street || ''}"
+                            data-house_number="${p.house_number || ''}"
+                            data-postal_code="${p.postal_code || ''}"
+                            data-bedrooms="${p.bedrooms || 1}"
+                            data-bathrooms="${p.bathrooms || 1}"
+                            data-area="${p.area || ''}"
+                            data-floor="${p.floor || ''}"
+                        >${p.name} - ${p.address}</option>`).join('');
                 }
             }
             
@@ -393,16 +462,65 @@
                 const data = await res.json();
                 
                 const addrList = document.getElementById('addressSuggestions');
-                addrList.innerHTML = data.map(r => `<option value="${r.display_name}">`).join('');
-            } catch(e) {}
+                addrList.innerHTML = data.map(r => `<option value="${r.display_name}" data-lat="${r.lat}" data-lon="${r.lon}">`).join('');
+                
+                // Auto-fill on selection
+                if (data.length > 0) {
+                    // Try to parse address components
+                    const parts = data[0].display_name.split(', ');
+                    if (parts.length > 0) {
+                        // Try to detect Canadian address format
+                        const addrStr = data[0].display_name;
+                        
+                        // Extract postal code if present
+                        const postalMatch = addrStr.match(/[A-Z]\d[A-Z]\s*\d[A-Z]\d/i);
+                        if (postalMatch) {
+                            document.getElementById('newPostalCode').value = postalMatch[0].replace(/\s/g, '');
+                        }
+                        
+                        // Extract province (typically last few parts for Canadian addresses)
+                        const canadianProvinces = ['Alberta', 'BC', 'British Columbia', 'Ontario', 'Quebec', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'PEI'];
+                        for (const prov of canadianProvinces) {
+                            if (addrStr.includes(prov)) {
+                                document.getElementById('newProvince').value = prov;
+                                break;
+                            }
+                        }
+                        
+                        // Try to extract city (usually in the middle for Canadian addresses)
+                        // For now, leave empty for manual entry
+                    }
+                }
+            } catch(e) {
+                console.error('Address search error:', e);
+            }
         }
         
         function fillPropertyAddress() {
             const select = document.getElementById('propertySelect');
             const option = select?.selectedOptions[0];
             if (option) {
+                // Fill in create order form (just property_id)
+                document.getElementById('propAddress').value = option.dataset.addr || '';
+            }
+        }
+        
+        function fillPropertyDetails() {
+            // Fill in the "我的房源" form when selecting from dropdown
+            const select = document.getElementById('propertySelect');
+            const option = select?.selectedOptions[0];
+            if (option) {
                 document.getElementById('newPropName').value = option.dataset.name || '';
                 document.getElementById('newPropAddress').value = option.dataset.addr || '';
+                document.getElementById('newProvince').value = option.dataset.province || '';
+                document.getElementById('newCity').value = option.dataset.city || '';
+                document.getElementById('newStreet').value = option.dataset.street || '';
+                document.getElementById('newHouseNumber').value = option.dataset.house_number || '';
+                document.getElementById('newPostalCode').value = option.dataset.postal_code || '';
+                document.getElementById('newBedrooms').value = option.dataset.bedrooms || '1';
+                document.getElementById('newBathrooms').value = option.dataset.bathrooms || '1';
+                document.getElementById('newArea').value = option.dataset.area || '';
+                document.getElementById('newFloor').value = option.dataset.floor || '';
             }
         }
     </script>
