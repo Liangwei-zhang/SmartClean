@@ -815,7 +815,7 @@
             const e = escapeHtml; // 簡化
 
             const API = "/api";
-            const hostPhone = localStorage.getItem('host_phone');
+            const hostPhone = localStorage.getItem("host_phone");
             let currentPage = "orders";
             let currentOrderFilter = "all";
 
@@ -1850,6 +1850,16 @@
                 if (mediaRecorder) return;
 
                 try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                    });
+                    mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: "audio/webm",
+                    });
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data && event.data.size > 0) {
+                            audioChunks.push(event.data);
                         }
                     };
 
