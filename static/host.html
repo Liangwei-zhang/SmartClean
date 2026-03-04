@@ -207,7 +207,7 @@
             <input type="text" id="loginPhone" placeholder="手機號" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">
             <input type="password" id="loginPassword" placeholder="密碼" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">
             <button type="button" class="btn btn-primary" onclick="login()">登入</button>
-            <p style="margin-top:12px;text-align:center;font-size:14px;">還沒有帳號？<a href="#" onclick="showRegister()">註冊</a></p>
+            <p style="margin-top:12px;text-align:center;font-size:14px;">還沒有帳號？<a href="javascript:void(0)" onclick="showRegister()">註冊</a></p>
         </div>
     </div>
 
@@ -565,15 +565,6 @@
                 btn.textContent = '🔍 驗證';
             }
         }
-                            if (addrStr.includes(prov)) {
-                                document.getElementById('newProvince').value = prov;
-                                break;
-                            }
-                        }
-                        
-                        // Try to extract city (usually in the middle for Canadian addresses)
-                        // For now, leave empty for manual entry
-                    }
                 }
             } catch(e) {
                 console.error('Address search error:', e);
