@@ -1278,7 +1278,7 @@
             async function loadMyOrders() {
                 try {
                     showLoading();
-                    const res = await fetch(API + "/orders");
+                    const res = await fetch(API + "/orders?status=all");
                     const data = await res.json();
                     const filter = currentMyTaskFilter;
                     let orders = (data.data || []).filter(

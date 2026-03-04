@@ -51,7 +51,7 @@ async def list_orders(
 ):
     """訂單列表 - 包含房源信息"""
     query = select(Order)
-    if status:
+    if status and status != "all":
         query = query.where(Order.status == status)
     query = query.order_by(Order.created_at.desc())
     
