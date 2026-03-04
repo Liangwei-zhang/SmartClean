@@ -224,8 +224,10 @@
         }
         
         async function login() {
+            console.log('login clicked');
             const phone = document.getElementById('loginPhone').value;
             const password = document.getElementById('loginPassword').value;
+            console.log('phone:', phone, 'password:', password);
             
             if (!phone || !password) {
                 showToast('請輸入手機號和密碼');
@@ -259,8 +261,10 @@
         }
         
         function showRegister() {
+            console.log('register clicked');
             const phone = document.getElementById('loginPhone').value;
             const password = document.getElementById('loginPassword').value;
+            console.log('phone:', phone, 'password:', password);
             
             if (!phone || !password) {
                 showToast('請輸入手機號和密碼');
