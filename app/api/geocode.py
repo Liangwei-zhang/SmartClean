@@ -31,7 +31,7 @@ async def geocode(address: str = Query(...)):
                 
                 return {
                     "success": True,
-                    "province": addr.get("province", ""),
+                    "province": addr.get("state") or addr.get("province", ""),
                     "city": addr.get("city") or addr.get("town") or addr.get("village", ""),
                     "street": addr.get("road", ""),
                     "house_number": addr.get("house_number", ""),

@@ -106,12 +106,11 @@
                 
                 if (data.success) {
                     localStorage.setItem('user_type', type);
-                    localStorage.setItem('host_phone', type === 'host' ? data.data.phone : '');
-                    localStorage.setItem('cleaner_id', type === 'cleaner' ? data.data.user_id : '');
                     localStorage.setItem('user_name', data.data.name);
                     localStorage.setItem('user_id', data.data.user_id);
-                    localStorage.setItem('host_phone', data.data.phone);
                     localStorage.setItem('token', data.data.token);
+                    if (type === 'host') localStorage.setItem('host_phone', data.data.phone);
+                    if (type === 'cleaner') localStorage.setItem('cleaner_id', data.data.user_id);
                     
                     // Redirect to appropriate page
                     if (type === 'host') window.location.href = 'host.html';
