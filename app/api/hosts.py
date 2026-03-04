@@ -3,7 +3,7 @@ Hosts API - 房東管理
 """
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from app.core.database import get_db
 from app.core.response import success_response
 from app.models.models import User
@@ -45,3 +45,34 @@ async def create_host(
     await db.refresh(user)
     
     return success_response(data={"id": user.id, "code": code}, message="新增成功")
+
+
+@router.delete("/{host_id}")
+async def delete_host(
+    host_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """刪除房東"""
+    from app.models.models import Order
+    # 先清除房源
+    from app.models.models import Property
+    await db.execute(
+        update(Property).where(Property.host_id == host_id).values(host_id=None)
+    )
+    # 先清除訂單
+    await db.execute(
+        update(Order).where(Order.host_id == host_id).values(host_id=None, host_name=None, host_phone=None)
+    )
+    
+    result = await db.execute(
+        select(User).where(User.id == host_id)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="房東不存在")
+    
+    await db.delete(user)
+    await db.commit()
+    
+    return success_response(message="刪除成功")
