@@ -1,0 +1,1709 @@
+<!doctype html>
+<html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#FAFBFF" />
+        <title>👷 接單員控制台 - SmartClean</title>
+        <style>
+            /* --- 2026 極致視覺重構 --- */
+            /* 加載遮罩 */
+            .loading-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+                z-index: 9999;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+            }
+            .loading-overlay.active {
+                display: flex;
+            }
+            body.no-scroll {
+                overflow: hidden !important;
+            }
+            .loading-spinner {
+                width: 48px;
+                height: 48px;
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-top-color: #fff;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            .loading-text {
+                color: #fff;
+                margin-top: 16px;
+                font-size: 16px;
+                font-weight: 600;
+            }
+
+            :root {
+                --primary: oklch(60% 0.18 255); /* 數位科技藍 */
+                --midnight: oklch(15% 0.02 250);
+                --bg-canvas: oklch(98.5% 0.005 240);
+                --text-main: oklch(10% 0.01 240);
+                --text-muted: oklch(45% 0.02 240);
+                --accent-gold: oklch(70% 0.12 85);
+
+                /* 2026 玻璃體系 */
+                --glass-white: rgba(255, 255, 255, 0.88);
+                --glass-border: rgba(255, 255, 255, 0.5);
+                --shadow-premium: 0 20px 40px -12px oklch(0% 0 0 / 12%);
+                --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            body {
+                background: var(--bg-canvas);
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    system-ui,
+                    sans-serif;
+                color: var(--text-main);
+                padding-bottom: calc(100px + env(safe-area-inset-bottom));
+                background-image:
+                    radial-gradient(
+                        circle at 0% 0%,
+                        oklch(85% 0.08 250 / 25%),
+                        transparent 45%
+                    ),
+                    radial-gradient(
+                        circle at 100% 100%,
+                        oklch(85% 0.12 320 / 20%),
+                        transparent 45%
+                    );
+                background-attachment: fixed;
+                margin: 0;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* 玻璃態頂部導航 */
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                padding: calc(env(safe-area-inset-top) + 16px) 20px 16px;
+                background: rgba(255, 255, 255, 0.65);
+                backdrop-filter: blur(25px) saturate(200%);
+                -webkit-backdrop-filter: blur(25px) saturate(200%);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            header h1 {
+                font-size: 22px;
+                font-weight: 900;
+                letter-spacing: -1px;
+            }
+
+            /* 數據儀錶盤：懸浮卡片 */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                padding: 20px;
+            }
+            .stat-card {
+                background: white;
+                padding: 20px 10px;
+                border-radius: 24px;
+                box-shadow: 0 10px 25px oklch(0% 0 0 / 4%);
+                border: 1px solid rgba(0, 0, 0, 0.02);
+                text-align: center;
+                transition: transform 0.3s var(--spring);
+                cursor: pointer;
+            }
+            .stat-card:active {
+                transform: scale(0.95);
+            }
+            .stat-val {
+                font-size: 24px;
+                font-weight: 900;
+                color: var(--primary);
+            }
+            .stat-label {
+                font-size: 11px;
+                color: var(--text-muted);
+                font-weight: 800;
+                margin-top: 4px;
+            }
+
+            /* 分頁切換：iOS 18 膠囊風格 */
+            .nav-tabs {
+                display: flex;
+                background: rgba(0, 0, 0, 0.05);
+                margin: 0 20px 24px;
+                padding: 5px;
+                border-radius: 20px;
+            }
+            .nav-tab {
+                flex: 1;
+                padding: 12px;
+                border: none;
+                background: transparent;
+                font-size: 15px;
+                font-weight: 800;
+                border-radius: 16px;
+                transition: 0.4s var(--spring);
+                color: var(--text-muted);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            .nav-tab.active {
+                background: white;
+                color: var(--text-main);
+                box-shadow: 0 8px 15px oklch(0% 0 0 / 8%);
+            }
+
+            /* 任務卡片：深度質感 */
+            .card {
+                background: white;
+                border-radius: 32px;
+                padding: 24px;
+                margin: 0 20px 20px;
+                box-shadow: var(--shadow-premium);
+                border: 1px solid rgba(0, 0, 0, 0.03);
+                animation: cardEntrance 0.6s var(--spring) backwards;
+            }
+            @keyframes cardEntrance {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px) scale(0.95);
+                }
+            }
+
+            .prop-name {
+                font-size: 20px;
+                font-weight: 900;
+                margin-bottom: 4px;
+            }
+            .price {
+                font-size: 24px;
+                font-weight: 900;
+                color: var(--accent-gold);
+            }
+
+            .info-row {
+                font-size: 14px;
+                font-weight: 600;
+                color: #555;
+                margin-top: 10px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .btn-grab {
+                width: 100%;
+                margin-top: 24px;
+                padding: 20px;
+                border-radius: 20px;
+                background: var(--midnight);
+                color: white;
+                border: none;
+                font-weight: 900;
+                font-size: 17px;
+                cursor: pointer;
+                box-shadow: 0 15px 30px oklch(0% 0 0 / 25%);
+                transition: 0.3s;
+            }
+            .btn-grab:active {
+                transform: scale(0.96);
+                background: var(--primary);
+            }
+
+            /* --- 【完美重構】左下角 FAB 系統 --- */
+            .fab-container {
+                position: fixed;
+                bottom: 30px;
+                left: 25px; /* 嚴格固定在左下角 */
+                display: flex;
+                flex-direction: column-reverse; /* 關鍵：讓子選單往按鈕上方長 */
+                align-items: flex-start;
+                gap: 12px;
+                z-index: 9999;
+            }
+
+            /* 主按鈕 */
+            .fab-main {
+                width: 65px;
+                height: 65px;
+                border-radius: 22px;
+                background: var(--midnight);
+                color: white;
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+                cursor: pointer;
+                transition: all 0.5s var(--spring);
+            }
+            .plus-icon {
+                font-size: 32px;
+                transition: transform 0.5s var(--spring);
+            }
+
+            /* 子選單列表 */
+            .fab-options {
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 10px;
+                pointer-events: none;
+            }
+
+            /* 子選單項：高亮度毛玻璃 + 極黑粗體字 */
+            .fab-item {
+                height: 54px;
+                min-width: 160px;
+                padding: 0 20px;
+                border-radius: 18px;
+                background: var(--glass-white);
+                backdrop-filter: blur(20px) saturate(200%);
+                -webkit-backdrop-filter: blur(20px) saturate(200%);
+
+                /* 文字清晰度優化 */
+                color: #000000 !important;
+                font-size: 16px;
+                font-weight: 900; /* 極粗體 */
+                letter-spacing: 0.5px;
+
+                border: 1px solid var(--glass-border);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+
+                opacity: 0;
+                transform: translateY(20px) scale(0.8) rotate(-5deg);
+                transition: all 0.4s var(--spring);
+            }
+
+            /* 激活狀態 */
+            .fab-container.active .fab-options {
+                pointer-events: auto;
+            }
+            .fab-container.active .fab-item {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(0);
+            }
+            .fab-container.active .plus-icon {
+                transform: rotate(135deg);
+            }
+            .fab-container.active .fab-main {
+                background: var(--primary);
+                transform: scale(0.9);
+            }
+
+            /* 動態延遲 */
+            .fab-item:nth-child(1) {
+                transition-delay: 0s;
+            }
+            .fab-item:nth-child(2) {
+                transition-delay: 0.05s;
+            }
+            .fab-item:nth-child(3) {
+                transition-delay: 0.1s;
+            }
+
+            /* 吐司提示 */
+            .toast {
+                position: fixed;
+                bottom: 50px;
+                left: 50%;
+                transform: translateX(-50%) translateY(100px);
+                background: rgba(0, 0, 0, 0.85);
+                color: white;
+                padding: 14px 28px;
+                border-radius: 50px;
+                font-weight: 800;
+                transition: 0.5s var(--spring);
+                z-index: 10000;
+            }
+            .toast.show {
+                transform: translateX(-50%) translateY(0);
+            }
+            /* --- 2026 旗艦視覺系統：極致毛玻璃與物理動效 --- */
+            :root {
+                --primary: oklch(60% 0.18 255);
+                --midnight: oklch(18% 0.02 250);
+                --bg-canvas: oklch(98.5% 0.005 240);
+                --text-main: #000000;
+                --text-muted: oklch(45% 0.02 240);
+                --accent-gold: oklch(70% 0.12 85);
+                --glass-white: rgba(255, 255, 255, 0.85);
+                --glass-border: rgba(255, 255, 255, 0.6);
+                --shadow-lux: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+                --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            body {
+                background: var(--bg-canvas);
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    system-ui,
+                    sans-serif;
+                color: var(--text-main);
+                padding-bottom: calc(100px + env(safe-area-inset-bottom));
+                background-image:
+                    radial-gradient(
+                        circle at 0% 0%,
+                        oklch(85% 0.08 250 / 15%),
+                        transparent 40%
+                    ),
+                    radial-gradient(
+                        circle at 100% 100%,
+                        oklch(85% 0.12 320 / 12%),
+                        transparent 40%
+                    );
+                background-attachment: fixed;
+                margin: 0;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* --- 1. 頂部與分頁 (iOS 18 風格) --- */
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                padding: calc(env(safe-area-inset-top) + 16px) 20px 16px;
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(25px) saturate(200%);
+                -webkit-backdrop-filter: blur(25px) saturate(200%);
+                border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+            }
+
+            .nav-tabs {
+                display: flex;
+                background: rgba(0, 0, 0, 0.05);
+                margin: 0 20px 20px;
+                padding: 4px;
+                border-radius: 20px;
+            }
+            .nav-tab {
+                flex: 1;
+                padding: 12px;
+                border: none;
+                background: transparent;
+                font-size: 15px;
+                font-weight: 800;
+                border-radius: 16px;
+                color: var(--text-muted);
+                transition: 0.4s var(--spring);
+            }
+            .nav-tab.active {
+                background: white;
+                color: var(--text-main);
+                box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+            }
+
+            /* --- 2. 下拉框美化 (Select Box) --- */
+            .sort-bar {
+                display: flex;
+                gap: 10px;
+                padding: 0 20px 15px;
+            }
+            .tab-btn {
+                flex: 1;
+                min-width: 60px;
+                padding: 8px 6px;
+                border-radius: 12px;
+                border: 2px solid transparent;
+                background: var(--glass-white);
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--text-secondary);
+                cursor: pointer;
+                transition: all 0.2s;
+                line-height: 1.3;
+            }
+            .tab-btn.active {
+                background: var(--primary);
+                color: white;
+            }
+            .sort-select {
+                flex: 1;
+                padding: 12px 16px;
+                border-radius: 14px;
+                background: var(--glass-white);
+                border: 1px solid var(--glass-border);
+                font-weight: 700;
+                color: var(--text-main);
+                font-size: 14px;
+                appearance: none;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            }
+            .sort-btn {
+                flex: 1;
+                padding: 10px 14px;
+                border-radius: 14px;
+                background: var(--glass-white);
+                border: 1px solid var(--glass-border);
+                font-weight: 600;
+                color: var(--text-muted);
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .sort-btn.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+
+            /* --- 3. 任務卡片與導航連結 --- */
+            .card {
+                background: white;
+                border-radius: 32px;
+                padding: 24px;
+                margin: 0 20px 16px;
+                box-shadow: var(--shadow-lux);
+                border: 1px solid rgba(0, 0, 0, 0.02);
+                animation: cardIn 0.5s var(--spring) both;
+            }
+            @keyframes cardIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+            }
+
+            .map-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 15px;
+                color: var(--ios-blue);
+                text-decoration: none;
+                font-weight: 800;
+                font-size: 14px;
+                padding: 10px 16px;
+                background: oklch(95% 0.02 255);
+                border-radius: 12px;
+            }
+
+            /* --- 4. 按鈕體系 (搶單/完成) --- */
+            .btn-grab,
+            .btn-done,
+            .btn-arrived {
+                width: 100%;
+                margin-top: 20px;
+                padding: 18px;
+                border-radius: 20px;
+                border: none;
+                font-weight: 900;
+                font-size: 17px;
+                cursor: pointer;
+            }
+            
+            .btn-arrived {
+                background: linear-gradient(135deg, #FF9800, #F57C00);
+                color: white;
+                box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+            }
+            .btn-arrived:active {
+                transform: scale(0.98);
+            }
+                transition: 0.3s var(--spring);
+            }
+            .btn-grab {
+                background: var(--midnight);
+                color: white;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            }
+            .btn-done {
+                background: var(--primary);
+                color: white;
+                box-shadow: 0 10px 25px oklch(60% 0.18 255 / 30%);
+            }
+            .btn-grab:active,
+            .btn-done:active {
+                transform: scale(0.96);
+                opacity: 0.9;
+            }
+
+            /* --- 5. 完工照片展示 --- */
+            .photo-strip {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding: 4px 0;
+                margin-top: 12px;
+            }
+            .photo-strip img {
+                width: 70px;
+                height: 70px;
+                border-radius: 14px;
+                object-fit: cover;
+                border: 2px solid white;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            /* --- 6. 上傳完工照片 Modal (深度美化) --- */
+            .photo-upload-modal {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(15px);
+                z-index: 10001;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+            .photo-upload-modal.active {
+                display: flex;
+                animation: modalIn 0.4s var(--spring);
+            }
+            @keyframes modalIn {
+                from {
+                    opacity: 0;
+                    scale: 0.9;
+                }
+            }
+
+            .photo-upload-box {
+                background: var(--glass-white);
+                width: 100%;
+                max-width: 400px;
+                padding: 30px;
+                border-radius: 35px;
+                border: 1px solid var(--glass-border);
+                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            }
+
+            .photo-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                margin: 20px 0;
+            }
+            .photo-slot {
+                aspect-ratio: 1;
+                border-radius: 18px;
+                background: rgba(0, 0, 0, 0.05);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                color: var(--text-muted);
+                border: 2px dashed rgba(0, 0, 0, 0.1);
+                position: relative;
+                overflow: hidden;
+            }
+            .photo-slot img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .del-photo {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                width: 22px;
+                height: 22px;
+                background: rgba(255, 0, 0, 0.8);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .photo-actions {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 10px;
+                margin-top: 20px;
+            }
+            .btn-photo-submit {
+                background: var(--midnight);
+                color: white;
+                padding: 15px;
+                border-radius: 16px;
+                border: none;
+                font-weight: 800;
+            }
+            .btn-photo-cancel {
+                background: rgba(0, 0, 0, 0.05);
+                color: var(--text-main);
+                padding: 15px;
+                border-radius: 16px;
+                border: none;
+                font-weight: 700;
+            }
+
+            /* --- 7. 左下角 FAB 系統 --- */
+            .fab-container {
+                position: fixed;
+                bottom: 30px;
+                left: 25px;
+                display: flex;
+                flex-direction: column-reverse;
+                align-items: flex-start;
+                gap: 12px;
+                z-index: 9999;
+            }
+            .fab-main {
+                width: 65px;
+                height: 65px;
+                border-radius: 22px;
+                background: var(--midnight);
+                color: white;
+                border: none;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+                transition: 0.5s var(--spring);
+            }
+            .fab-item {
+                height: 54px;
+                min-width: 160px;
+                padding: 0 20px;
+                border-radius: 18px;
+                background: var(--glass-white);
+                backdrop-filter: blur(20px) saturate(200%);
+                color: #000000 !important;
+                font-weight: 900;
+                border: 1px solid var(--glass-border);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                opacity: 0;
+                transform: translateY(20px) scale(0.8);
+                transition: 0.4s var(--spring);
+            }
+            .fab-container.active .fab-item {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            /* --- 2026 旗艦視覺系統：深度修復版 --- */
+            :root {
+                --primary: oklch(60% 0.18 255);
+                --midnight: oklch(18% 0.02 250);
+                --bg-canvas: #f8fafc;
+                --glass-white: rgba(255, 255, 255, 0.9);
+                --glass-border: rgba(255, 255, 255, 0.6);
+                --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            /* 1. 解決數據看板錯位 */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr); /* 嚴格三列均分 */
+                gap: 12px;
+                padding: 16px 20px;
+                align-items: stretch; /* 確保卡片高度一致 */
+            }
+
+            .stat-card {
+                background: white;
+                padding: 16px 8px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03);
+                border: 1px solid rgba(0, 0, 0, 0.02);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .stat-val {
+                font-size: 20px;
+                font-weight: 900;
+                color: var(--primary);
+                line-height: 1.2;
+            }
+
+            .stat-label {
+                font-size: 11px;
+                color: #64748b;
+                font-weight: 700;
+                margin-top: 4px;
+                white-space: nowrap; /* 防止標籤換行導致錯位 */
+            }
+
+            /* 2. 房東語音備註組件樣式 */
+            .voice-player {
+                background: oklch(96% 0.01 255);
+                padding: 12px 16px;
+                border-radius: 16px;
+                margin: 15px 0;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                border: 1px solid rgba(0, 0, 0, 0.03);
+            }
+
+            .voice-btn {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                border: none;
+                background: var(--midnight);
+                color: white;
+                font-size: 14px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: 0.3s;
+            }
+
+            .voice-btn.playing {
+                background: var(--primary);
+                box-shadow: 0 0 15px var(--primary);
+            }
+
+            .voice-label {
+                font-size: 13px;
+                font-weight: 800;
+                color: var(--midnight);
+            }
+
+            /* 3. 地圖導航連結美化 */
+            .map-link {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 18px;
+                background: #eef2ff;
+                color: #4338ca;
+                text-decoration: none;
+                border-radius: 14px;
+                font-weight: 800;
+                font-size: 14px;
+                margin: 12px 0;
+                width: fit-content;
+            }
+
+            /* 4. 完工照片與按鈕細節 */
+            .photo-strip {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding: 8px 0;
+            }
+
+            .photo-strip img {
+                width: 64px;
+                height: 64px;
+                border-radius: 12px;
+                object-fit: cover;
+                border: 2px solid white;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .btn-grab,
+            .btn-done {
+                width: 100%;
+                padding: 18px;
+                border-radius: 20px;
+                border: none;
+                font-weight: 900;
+                font-size: 16px;
+                cursor: pointer;
+                transition: 0.3s var(--spring);
+                margin-top: 10px;
+            }
+
+            .btn-grab {
+                background: var(--midnight);
+                color: white;
+            }
+            .btn-done {
+                background: var(--primary);
+                color: white;
+            }
+
+            /* 5. 左下角 FAB (固定定位) */
+            .fab-container {
+                position: fixed;
+                bottom: 30px;
+                left: 25px;
+                display: flex;
+                flex-direction: column-reverse;
+                align-items: flex-start;
+                gap: 12px;
+                z-index: 9999;
+            }
+            /* 隱藏原生文件上傳按鈕 */
+            .photo-input {
+                display: none;
+            }
+
+            /* 確保點擊圖片框時能觸發上傳 */
+            .photo-slot {
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .photo-slot:hover {
+                background: rgba(0, 0, 0, 0.08);
+                border-color: var(--primary);
+            }
+            /* --- 2026 高級空狀態設計 --- */
+            .empty-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 60px 20px;
+                margin: 40px 20px;
+                background: rgba(255, 255, 255, 0.4);
+                backdrop-filter: blur(10px);
+                border: 1px dashed rgba(0, 0, 0, 0.1);
+                border-radius: 32px;
+                animation: fadeInSlide 0.8s var(--spring);
+            }
+
+            .empty-icon {
+                font-size: 64px;
+                margin-bottom: 16px;
+                filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+                animation: float 3s ease-in-out infinite;
+            }
+
+            .empty-text {
+                font-size: 18px;
+                font-weight: 800;
+                color: var(--text-main);
+                letter-spacing: -0.5px;
+            }
+
+            .empty-subtext {
+                font-size: 14px;
+                color: var(--text-muted);
+                margin-top: 8px;
+                font-weight: 600;
+            }
+
+            /* 浮動動畫 */
+            @keyframes float {
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
+
+            @keyframes fadeInSlide {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- 加載遮罩 -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">載入中...</div>
+        </div>
+
+        <header>
+            <div class="logo">
+                接单大厅<span style="color: var(--primary)">CP</span>
+            </div>
+            <button
+                onclick="location.href = 'index.html'"
+                style="
+                    border: none;
+                    background: none;
+                    font-weight: 700;
+                    opacity: 0.5;
+                "
+            >
+                登出系統
+            </button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card" onclick="showPage('my');setMyTaskFilter('accepted');">
+                <span class="stat-val" id="statPending">0</span>
+                <span class="stat-label">待辦任務</span>
+            </div>
+            <div class="stat-card" onclick="showPage('my');setMyTaskFilter('all');">
+                <span class="stat-val" id="statTotal">0</span>
+                <span class="stat-label">累計任務</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="statIncome">$0</span>
+                <span class="stat-label">本月收入</span>
+            </div>
+        </div>
+
+        <nav class="nav-tabs">
+            <button
+                class="nav-tab active"
+                id="navOpen"
+                onclick="showPage('open')"
+            >
+                <span>📥</span>
+                <span>搶單大廳</span>
+            </button>
+            <button class="nav-tab" id="navMy" onclick="showPage('my')">
+                <span>📋</span>
+                <span>我的任務</span>
+            </button>
+        </nav>
+
+        <div class="sort-bar" id="sortBar" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="sort-btn" id="btnPrice" onclick="toggleSort('price')">💰 金額</button>
+            <button class="sort-btn" id="btnDistance" onclick="toggleSort('distance')">📍 距離</button>
+            <button class="sort-btn" id="btnTime" onclick="toggleSort('time')">🕐 時間</button>
+        </div>
+
+        <main id="pageOpen">
+            <div id="openOrdersList"></div>
+        </main>
+
+        <div class="sort-bar" id="myTaskBar" style="display: none">
+            <button class="tab-btn active" data-filter="all" onclick="setMyTaskFilter('all')">📋<br>全部</button>
+            <button class="tab-btn" data-filter="accepted" onclick="setMyTaskFilter('accepted')">🔄<br>進行中</button>
+            <button class="tab-btn" data-filter="completed" onclick="setMyTaskFilter('completed')">✅<br>已完成</button>
+        </div>
+        <main id="pageMy" style="display: none">
+            <div id="myOrdersList"></div>
+        </main>
+
+        <div class="toast" id="toast"></div>
+
+        <!-- 完工上傳Modal -->
+        <div class="photo-upload-modal" id="photoModal">
+            <div class="photo-upload-box">
+                <div class="photo-upload-title">📸 上傳完工照片（最多5張）</div>
+                <div class="photo-grid" id="photoGrid"></div>
+                <input
+                    type="file"
+                    class="photo-input"
+                    id="photoInput"
+                    accept="image/*"
+                    multiple
+                />
+                <div class="photo-actions">
+                    <button
+                        class="btn-photo-submit"
+                        onclick="submitCompletion()"
+                    >
+                        ✅ 確認提交
+                    </button>
+                    <button
+                        class="btn-photo-cancel"
+                        onclick="closePhotoModal()"
+                    >
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // XSS 防護函數
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+            const e = escapeHtml;
+            const API = "/api";
+            const cleanerId = parseInt(localStorage.getItem("cleaner_id"));
+            const cleanerCode = localStorage.getItem("cleaner_code");
+
+            function haptic() {
+                if (navigator.vibrate) navigator.vibrate(20);
+            }
+
+            if (!cleanerId) {
+                location.href = "index.html";
+            }
+            function logout() {
+                localStorage.clear();
+                location.href = "index.html";
+            }
+
+            function showPage(page) {
+                haptic();
+                document
+                    .querySelectorAll(".nav-tab")
+                    .forEach((t) => t.classList.remove("active"));
+                document
+                    .getElementById(
+                        `nav${page.charAt(0).toUpperCase() + page.slice(1)}`,
+                    )
+                    .classList.add("active");
+                document.getElementById("pageOpen").style.display =
+                    page === "open" ? "block" : "none";
+                document.getElementById("pageMy").style.display =
+                    page === "my" ? "block" : "none";
+                document.getElementById("sortBar").style.display =
+                    page === "open" ? "flex" : "none";
+                document.getElementById("myTaskBar").style.display =
+                    page === "my" ? "flex" : "none";
+                page === "open" ? loadOpenOrders() : loadMyOrders();
+            }
+
+            async function loadStats() {
+                try {
+                    const res = await fetch(API + "/orders");
+                    const data = await res.json();
+                    const orders = data.data || [];
+
+                    // 統計 - 轉換為數字比較
+                    const myOrders = orders.filter(
+                        (o) => Number(o.assigned_cleaner_id) === cleanerId,
+                    );
+                    const pending = myOrders.filter(
+                        (o) => o.status === "accepted" || o.status === "arrived",
+                    ).length;
+                    const total = myOrders.length;
+                    const earnings = myOrders
+                        .filter((o) => o.status === "completed")
+                        .reduce((sum, o) => sum + (o.price || 0), 0);
+
+                    document.getElementById("statPending").textContent =
+                        pending;
+                    document.getElementById("statTotal").textContent = total;
+                    document.getElementById("statIncome").textContent =
+                        "$" + earnings;
+                } catch (e) {
+// console.error("Stats fail", e);
+                }
+            }
+
+            // 計算兩點距離 (km)
+            function calcDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            }
+
+            // 獲取用戶位置
+            function getUserLocation() {
+                return new Promise((resolve) => {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+                            () => resolve(null)
+                        );
+                    } else {
+                        resolve(null);
+                    }
+                });
+            }
+
+            // 地址轉坐標 (使用 Nominatim)
+            const geocodeCache = {};
+            async function geocodeAddress(address) {
+                if (geocodeCache[address]) return geocodeCache[address];
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+                    const data = await res.json();
+                    if (data && data[0]) {
+                        const result = {lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon)};
+                        geocodeCache[address] = result;
+                        return result;
+                    }
+                } catch(e) {}
+                return null;
+            }
+
+            // 統一時間格式化
+            function formatTime(isoString) {
+                if (!isoString) return "-";
+                try {
+                    const d = new Date(isoString);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const h = String(d.getHours()).padStart(2, '0');
+                    const min = String(d.getMinutes()).padStart(2, '0');
+                    return `${y}-${m}-${day} ${h}:${min}`;
+                } catch(e) { return isoString; }
+            }
+
+            // 排序狀態
+            let currentSort = { type: 'time', desc: true };
+            
+            function toggleSort(type) {
+                if (currentSort.type === type) {
+                    currentSort.desc = !currentSort.desc;
+                } else {
+                    currentSort.type = type;
+                    currentSort.desc = true;
+                }
+                // 更新按鈕樣式
+                ['price', 'distance', 'time'].forEach(t => {
+                    const btn = document.getElementById('btn' + t.charAt(0).toUpperCase() + t.slice(1));
+                    if (btn) {
+                        btn.classList.toggle('active', currentSort.type === t);
+                        btn.innerHTML = (t === 'price' ? '💰 金額' : t === 'distance' ? '📍 距離' : '🕐 時間') + (currentSort.type === t ? (currentSort.desc ? ' ↓' : ' ↑') : '');
+                    }
+                });
+                loadOpenOrders();
+            }
+
+            async function loadOpenOrders() {
+                try {
+                    showLoading();
+                    const res = await fetch(API + "/orders");
+                    const data = await res.json();
+                    let orders = (data.data || []).filter(
+                        (o) =>
+                            o.status === "open" &&
+                            o.assigned_cleaner_id === null,
+                    );
+
+                    // 異步計算距離，完成後排序並顯示
+                    getUserLocation().then(async userLoc => {
+                        if (userLoc) {
+                            // 等待所有地址解析完成
+                            await Promise.all(orders.map(async (o) => {
+                                const addr = o.property_address || o.property_name;
+                                if (addr) {
+                                    try {
+                                        const loc = await geocodeAddress(addr);
+                                        if (loc) {
+                                            o.distance = calcDistance(userLoc.lat, userLoc.lng, loc.lat, loc.lng);
+                                        }
+                                    } catch(e) {}
+                                }
+                            }));
+                        }
+
+                        // 排序
+                        const sortType = currentSort.type;
+                        const desc = currentSort.desc;
+                        orders.sort((a, b) => {
+                            if (sortType === "price") {
+                                const priceA = Number(a.price) || 0;
+                                const priceB = Number(b.price) || 0;
+                                return desc ? priceB - priceA : priceA - priceB;
+                            } else if (sortType === "distance") {
+                                const distA = Number(a.distance) || 999999;
+                                const distB = Number(b.distance) || 999999;
+                                return desc ? distB - distA : distA - distB;
+                            } else {
+                                // 時間排序 - created_at
+                                const timeA = a.created_at || "";
+                                const timeB = b.created_at || "";
+                                return desc ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                            }
+                        });
+
+                        const list = document.getElementById("openOrdersList");
+                        if (orders.length === 0) {
+                            list.innerHTML =
+                                '<div class="empty-state"><span class="empty-icon">📥</span>目前沒有新任務</div>';
+                            hideLoading();
+                            return;
+                        }
+
+                        list.innerHTML = orders
+                        .map(
+                            (o) => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="prop-name">${e(o.property_name) || "未命名房源"}</div>
+                        <div class="price">$${o.price}</div>
+                    </div>
+                    <div class="info-row">📍 ${shortAddr(o)}</div>
+                    ${o.distance !== undefined ? `<div class="info-row">📏 距離: ${o.distance.toFixed(1)} km</div>` : ''}
+                    <div class="info-row">🕐 退房時間: ${formatTime(o.checkout_time)}</div>
+                    ${
+                        o.text_notes
+                            ? `
+                        <div class="info-row" style="background:var(--bg-light);padding:10px;border-radius:8px;margin:8px 0;">
+                            <span style="font-size:12px;color:var(--text-muted);">📝 備註：</span>
+                            <div style="font-weight:600;margin-top:4px;">${e(o.text_notes)}</div>
+                        </div>
+                    `
+                            : ""
+                    }
+                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shortAddr(o))}" class="map-link" target="_blank">↗️ 查看導航地圖</a>
+                    <button class="btn-grab" onclick="acceptOrder(${o.id})">✋ 立即搶單</button>
+                </div>`,
+                        )
+                        .join("");
+                    hideLoading();
+                    }); // end getUserLocation().then()
+                } catch (e) {
+                    hideLoading();
+                    showToast("載入訂單失敗");
+                }
+            }
+
+            let currentMyTaskFilter = 'all';
+            function setMyTaskFilter(filter) {
+                currentMyTaskFilter = filter;
+                document.querySelectorAll('#myTaskBar .tab-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.filter === filter);
+                });
+                loadMyOrders();
+            }
+
+            async function loadMyOrders() {
+                try {
+                    showLoading();
+                    const res = await fetch(API + "/orders");
+                    const data = await res.json();
+                    const filter = currentMyTaskFilter;
+                    let orders = (data.data || []).filter(
+                        (o) =>
+                            Number(o.assigned_cleaner_id) === cleanerId &&
+                            o.status !== "open",
+                    );
+
+                    // 過濾
+                    if (filter !== "all") {
+                        if (filter === "accepted") {
+                            orders = orders.filter((o) => o.status === "accepted" || o.status === "arrived" || o.status === "arrived");
+                        } else {
+                            orders = orders.filter((o) => o.status === filter);
+                        }
+                    }
+
+                    document.getElementById("myOrdersList").innerHTML =
+                        orders
+                            .reverse()
+                            .map(
+                                (o) => `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="prop-name">${e(o.property_name)}</div>
+                            <div class="price">$${o.price}</div>
+                        </div>
+                        <div class="info-row">📍 ${fullAddr(o)}</div>
+                        <div class="info-row">📱 <a href="tel:${e(o.host_phone)}" style="color:var(--primary);text-decoration:none;">${e(o.host_phone)}</a> (房東)</div>
+                        <div class="info-row">🕐 ${formatTime(o.checkout_time)}</div>
+                        ${
+                            o.text_notes
+                                ? `
+                            <div class="info-row" style="background:#E8F5E9;padding:12px;border-radius:10px;margin-top:10px;border-left:3px solid #4CAF50;">
+                                <div style="font-size:12px;color:#2E7D32;font-weight:600;">📝 文字備註：</div>
+                                <div style="font-weight:600;margin-top:6px;color:#333;">${e(o.text_notes)}</div>
+                            </div>
+                        `
+                                : ""
+                        }
+                        <div class="info-row">📊 狀態: <span class="badge badge-${o.status}">${
+                            o.status === "open" ? "待搶單" :
+                            o.status === "accepted" || o.status === "arrived" ? "已接單" :
+                            o.status === "arrived" ? "已到達-清潔中" :
+                            "已完成"
+                        }</span></div>
+                        ${o.status === "completed" ? renderCompletionPhotos(o.completion_photos) : ""}
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr(o))}" class="map-link" target="_blank">↗️ 查看地圖導航</a>
+                        ${o.status === "accepted" ? `<button class="btn-arrived" onclick="arrivedOrder(${o.id})">📍 我已到達</button>` : ""}
+                        ${o.status === "arrived" ? `<button class="btn-done" onclick="completeOrder(${o.id})">✅ 清潔完成</button>` : ""}
+                    </div>
+                `,
+                            )
+                            .join("") ||
+                        '<div class="empty-state">尚無任務紀錄</div>';
+                    hideLoading();
+                } catch (e) {
+                    hideLoading();
+// console.error(e);
+                }
+            }
+
+            async function acceptOrder(id) {
+                // 先獲取訂單詳情，彈出確認框
+                try {
+                    const res = await fetch(API + "/orders/" + id);
+                    const data = await res.json();
+                    const o = data.data;
+                    
+                    if (!o) {
+                        showToast("訂單不存在");
+                        return;
+                    }
+                    
+                    // 彈出確認視窗
+                    const modal = document.createElement('div');
+                    modal.id = 'acceptConfirmModal';
+                    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                    modal.innerHTML = `
+                        <div style="background:white;border-radius:20px;padding:24px;max-width:90%;width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                            <h3 style="margin:0 0 16px 0;font-size:18px;color:var(--midnight);">📋 確認接單</h3>
+                            <div style="background:var(--bg-light);padding:16px;border-radius:12px;margin-bottom:16px;">
+                                <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">📱 聯繫電話</div>
+                                <a href="tel:${e(o.host_phone)}" style="font-weight:700;font-size:18px;color:var(--primary);text-decoration:none;">${e(o.host_phone)}</a>
+                            </div>
+                            <div style="background:#FFF3E0;padding:12px;border-radius:12px;margin-bottom:20px;border-left:4px solid #FF9800;">
+                                <div style="font-size:13px;color:#E65100;font-weight:600;">⚠️ 提示</div>
+                                <div style="font-size:13px;color:#E65100;margin-top:4px;">請務必聯繫房東確認詳情後再前往</div>
+                            </div>
+                            <div style="display:flex;gap:12px;">
+                                <button onclick="closeAcceptModal()" style="flex:1;padding:14px;border-radius:12px;border:2px solid #ddd;background:white;color:#666;font-weight:700;cursor:pointer;">取消</button>
+                                <button id="confirmAcceptBtn" style="flex:1;padding:14px;border-radius:12px;border:none;background:var(--primary);color:white;font-weight:700;cursor:pointer;">✅ 確認接單</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    
+                    document.getElementById('confirmAcceptBtn').onclick = async () => {
+                        modal.remove();
+                        await doAcceptOrder(id);
+                    };
+                    
+                } catch (e) {
+                    showToast("獲取訂單失敗");
+                }
+            }
+            
+            function closeAcceptModal() {
+                const modal = document.getElementById('acceptConfirmModal');
+                if (modal) modal.remove();
+            }
+            
+            async function doAcceptOrder(id) {
+                haptic();
+                showLoading("接單中...");
+                try {
+                    const res = await fetch(API + "/orders/" + id, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            status: "accepted",
+                            cleaner_id: cleanerId,
+                        }),
+                    });
+                    const data = await res.json();
+                    hideLoading();
+                    if (res.ok) {
+                        showToast("🎉 搶單成功！請聯繫房東");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showToast(
+                            "❌ " + (data.message || "手速慢了，已被搶走"),
+                        );
+                    }
+                } catch (e) {
+                    hideLoading();
+                    showToast("請求失敗");
+                }
+            }
+
+            // 加載動畫控制
+            function showLoading(text = "載入中...") {
+                const overlay = document.getElementById("loadingOverlay");
+                const textEl = overlay.querySelector(".loading-text");
+                textEl.textContent = text;
+                overlay.classList.add("active");
+                document.body.classList.add("no-scroll");
+            }
+
+            function hideLoading() {
+                const overlay = document.getElementById("loadingOverlay");
+                overlay.classList.remove("active");
+                document.body.classList.remove("no-scroll");
+            }
+
+            function showToast(msg) {
+                const t = document.getElementById("toast");
+                t.textContent = msg;
+                t.classList.add("show");
+                setTimeout(() => t.classList.remove("show"), 3000);
+            }
+
+            // 完工照片上傳
+            let currentOrderId = null;
+            let uploadedPhotos = [];
+
+            // 清潔工到達現場
+            function arrivedOrder(id) {
+                haptic();
+                showLoading("處理中...");
+                fetch(API + "/orders/" + id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: "arrived" })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    hideLoading();
+                    if (d.message || d.data) {
+                        showToast("📍 已記錄到達，開始清潔！");
+                        loadMyOrders();
+                    } else {
+                        showToast("❌ 操作失敗");
+                    }
+                })
+                .catch(e => {
+                    hideLoading();
+                    showToast("❌ 請求失敗");
+                });
+            }
+
+            function completeOrder(id) {
+
+                currentOrderId = id;
+                uploadedPhotos = [];
+                renderPhotoGrid();
+                document.getElementById("photoModal").classList.add("active");
+            }
+
+            function closePhotoModal() {
+                document
+                    .getElementById("photoModal")
+                    .classList.remove("active");
+                currentOrderId = null;
+                uploadedPhotos = [];
+            }
+
+            function renderPhotoGrid() {
+                const grid = document.getElementById("photoGrid");
+                let html = "";
+                for (let i = 0; i < 5; i++) {
+                    if (uploadedPhotos[i]) {
+                        html += `<div class="photo-slot has-photo">
+                        <img loading="lazy" src="${uploadedPhotos[i]}">
+                        <button class="del-photo" onclick="deletePhoto(${i})">×</button>
+                    </div>`;
+                    } else {
+                        html += `<div class="photo-slot" onclick="triggerPhotoUpload(${i})">+</div>`;
+                    }
+                }
+                grid.innerHTML = html;
+            }
+
+            // 上傳圖片到服務器
+            async function uploadPhotoToServer(file) {
+                const formData = new FormData();
+                formData.append("file", file);
+                const res = await fetch(`${API}/upload/image`, {
+                    method: "POST",
+                    body: formData,
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.url;
+                }
+                throw new Error("上傳失敗");
+            }
+
+            function triggerPhotoUpload(index) {
+                const input = document.getElementById("photoInput");
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            showToast("上傳中...");
+                            const url = await uploadPhotoToServer(file);
+                            uploadedPhotos[index] = url;
+                            renderPhotoGrid();
+                            showToast("上傳成功");
+                        } catch (err) {
+                            showToast("上傳失敗，請重試");
+                        }
+                    }
+                    input.value = "";
+                };
+                input.click();
+            }
+
+            // 圖片壓縮函數
+            function compressImage(file, maxWidth, quality, callback) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        // 調整尺寸
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        // 輸出壓縮後的 base64
+                        callback(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function deletePhoto(index) {
+                uploadedPhotos.splice(index, 1);
+                renderPhotoGrid();
+            }
+
+            async function submitCompletion() {
+                const orderId = currentOrderId;
+
+                if (!orderId) {
+                    showToast("訂單ID無效，請重試");
+                    return;
+                }
+                // Save photos BEFORE closing modal
+                const validPhotos = uploadedPhotos.filter(
+                    (p) => p && p.length > 0,
+                );
+
+
+                // Close modal
+                document
+                    .getElementById("photoModal")
+                    .classList.remove("active");
+
+
+                showToast("正在提交...");
+                try {
+                    const bodyData = {
+                        status: "completed",
+                        cleaner_id: parseInt(cleanerId),
+                        completion_photos: JSON.stringify(validPhotos),
+                    };
+                    const res = await fetch(`${API}/orders/${orderId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(bodyData),
+                    });
+                    if (res.ok) {
+                        showToast("✅ 任務已完成！");
+                        loadMyOrders();
+                        loadStats();
+                    } else {
+                        showToast("提交失敗");
+                    }
+                } catch (e) {
+                    showToast("提交失敗");
+                }
+            }
+
+            function playVoice(btn, url) {
+                const audio = btn.parentElement.querySelector("audio");
+                if (audio.paused) {
+                    audio.play();
+                    btn.textContent = "⏸";
+                    btn.classList.add("playing");
+                    audio.onended = () => {
+                        btn.textContent = "▶";
+                        btn.classList.remove("playing");
+                    };
+                } else {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    btn.textContent = "▶";
+                    btn.classList.remove("playing");
+                }
+            }
+
+            // 隱藏門牌號 - 只顯示街道、城市、省
+            function shortAddr(item) {
+                // 優先使用拆分字段
+                if (
+                    item.property_province !== undefined ||
+                    item.property_city !== undefined ||
+                    item.property_street !== undefined
+                ) {
+                    const parts = [];
+                    if (item.property_street) parts.push(item.property_street);
+                    if (item.property_city) parts.push(item.property_city);
+                    if (item.property_province)
+                        parts.push(item.property_province);
+                    if (parts.length > 0) return parts.join(", ");
+                }
+                // 沒有拆分字段時使用原地址
+                if (item.property_address) return item.property_address;
+                return "無地址";
+            }
+
+            // 完整地址 - 用於導航
+            function fullAddr(item) {
+                if (
+                    item.property_province ||
+                    item.property_city ||
+                    item.property_street
+                ) {
+                    const parts = [];
+                    if (item.property_house_number)
+                        parts.push(item.property_house_number);
+                    if (item.property_street) parts.push(item.property_street);
+                    if (item.property_city) parts.push(item.property_city);
+                    if (item.property_province)
+                        parts.push(item.property_province);
+                    return parts.join(", ");
+                }
+                return item.property_address || item.address || "無地址";
+            }
+
+            function renderCompletionPhotos(photosJson) {
+                try {
+                    let photos =
+                        typeof photosJson === "string"
+                            ? JSON.parse(photosJson)
+                            : photosJson;
+                    if (!photos || !Array.isArray(photos)) photos = [];
+                    photos = photos.filter((p) => p && p.length > 0); // Filter empty
+                    if (photos.length === 0) return "";
+                    return `<div style="margin-top:12px;">
+                    <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:8px;">📸 完工照片</div>
+                    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
+                        ${photos.map((p) => `<img loading="lazy" src="${p}" style="width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:pointer;" >`).join("")}
+                    </div>
+                </div>`;
+                } catch (e) {
+                    return "";
+                }
+            }
+
+            function viewPhoto(url) {
+                window.open(url, "_blank");
+            }
+
+            loadStats();
+            loadOpenOrders();
+            setInterval(() => {
+                if (
+                    document.getElementById("pageOpen").style.display !== "none"
+                )
+                    loadOpenOrders();
+            }, 20000);
+        </script>
+    </body>
+</html>

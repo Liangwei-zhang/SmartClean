@@ -87,22 +87,22 @@ from fastapi.responses import FileResponse
 
 @app.get("/")
 async def index_page():
-    return FileResponse("static/cleaner.html")
+    return FileResponse("static/cleaner_old.html")
 
 
 @app.get("/cleaner")
 async def cleaner_page():
-    return FileResponse("static/cleaner.html")
+    return FileResponse("static/cleaner_old.html")
 
 
 @app.get("/host")
 async def host_page():
-    return FileResponse("static/host.html")
+    return FileResponse("static/host_old.html")
 
 
 @app.get("/admin")
 async def admin_page():
-    return FileResponse("static/admin.html")
+    return FileResponse("static/admin_old.html")
 
 
 # 路由

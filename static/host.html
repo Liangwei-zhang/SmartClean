@@ -387,7 +387,7 @@
             
             // Validate address with geocoding
             try {
-                const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address) + '&limit=1');
+                const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=' + encodeURIComponent(address) + '&limit=1');
                 const geoData = await geoRes.json();
                 
                 if (!geoData || geoData.length === 0) {
@@ -525,7 +525,7 @@
             btn.textContent = '搜索中...';
             
             try {
-                const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr) + '&limit=5');
+                const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=' + encodeURIComponent(addr) + '&limit=5');
                 const data = await res.json();
                 
                 const addrList = document.getElementById('addressSuggestions');
@@ -534,24 +534,32 @@
                 if (data.length > 0) {
                     // Use first result
                     const first = data[0];
-                    document.getElementById('newPropAddress').value = first.display_name;
+                    // Build shorter address
+                    const addr = first.address || {};
+                    let parts = [];
+                    if (addr.house_number) parts.push(addr.house_number);
+                    if (addr.road) parts.push(addr.road);
+                    if (addr.city || addr.town) parts.push(addr.city || addr.town);
+                    if (addr.province) parts.push(addr.province);
+                    if (addr.postcode) parts.push(addr.postcode);
+                    document.getElementById('newPropAddress').value = parts.join(', ');
                     
-                    // Parse address components
-                    const addrStr = first.display_name;
+                    // Parse address components from Nominatim
+                    const addr = first.address || {};
                     
-                    // Extract postal code
-                    const postalMatch = addrStr.match(/[A-Z]\d[A-Z]\s*\d[A-Z]\d/i);
+                    // Fill in address fields if available
+                    if (addr.province) document.getElementById('newProvince').value = addr.province;
+                    if (addr.city || addr.town || addr.village) {
+                        document.getElementById('newCity').value = addr.city || addr.town || addr.village;
+                    }
+                    if (addr.road) document.getElementById('newStreet').value = addr.road;
+                    if (addr.house_number) document.getElementById('newHouseNumber').value = addr.house_number;
+                    if (addr.postcode) document.getElementById('newPostalCode').value = addr.postcode;
+                    
+                    // Extract postal code as fallback
+                    const postalMatch = first.display_name.match(/[A-Z]\d[A-Z]\s*\d[A-Z]\d/i);
                     if (postalMatch) {
                         document.getElementById('newPostalCode').value = postalMatch[0].replace(/\s/g, '');
-                    }
-                    
-                    // Extract province
-                    const canadianProvinces = ['Alberta', 'BC', 'British Columbia', 'Ontario', 'Quebec', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'PEI'];
-                    for (const prov of canadianProvinces) {
-                        if (addrStr.includes(prov)) {
-                            document.getElementById('newProvince').value = prov;
-                            break;
-                        }
                     }
                     
                     showToast('✅ 地址驗證成功');
