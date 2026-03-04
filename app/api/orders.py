@@ -205,6 +205,34 @@ async def accept_order(
 
 @router.patch("/{order_id}")
 @router.put("/{order_id}")
+async def update_order(
+    order_id: int,
+    req: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    """更新訂單"""
+    result = await db.execute(
+        select(Order).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="訂單不存在")
+    
+    # 更新字段
+    if "status" in req:
+        order.status = req["status"]
+        if req["status"] == "arrived":
+            order.arrived_at = func.now()
+        elif req["status"] == "completed":
+            order.completed_at = func.now()
+    
+    await db.commit()
+    await db.refresh(order)
+    
+    return success_response(data=serialize_order(order))
+
+
 @router.get("/{order_id}")
 async def get_order(order_id: int, db: AsyncSession = Depends(get_db)):
     """訂單詳情"""
