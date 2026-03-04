@@ -230,6 +230,12 @@ async def update_order(
     if "completion_photos" in req:
         order.completion_photos = req["completion_photos"]
     
+    if "cleaner_id" in req:
+        order.cleaner_id = req["cleaner_id"]
+    
+    if "cleaner_name" in req:
+        order.cleaner_name = req["cleaner_name"]
+    
     await db.commit()
     await db.refresh(order)
     
