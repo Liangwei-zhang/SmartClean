@@ -1396,6 +1396,12 @@
                 showLoading("接單中...");
                 try {
                     const res = await fetch(API + "/orders/" + id, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            cleaner_id: cleanerId,
+                            cleaner_name: localStorage.getItem('user_name') || '清潔工',
+                        }),
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
