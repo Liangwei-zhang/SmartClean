@@ -1850,11 +1850,11 @@
                 if (mediaRecorder) return;
 
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                    });
-                    mediaRecorder = new MediaRecorder(stream, {
-                        mimeType: "audio/webm",
+//                     const stream = await navigator.mediaDevices.getUserMedia({
+//                         audio: true,
+//                     });
+//                     mediaRecorder = new MediaRecorder(stream, {
+//                         mimeType: "audio/webm",
                     });
 
                     mediaRecorder.ondataavailable = (event) => {
