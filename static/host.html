@@ -815,7 +815,7 @@
             const e = escapeHtml; // 簡化
 
             const API = "/api";
-            const hostPhone = localStorage.getItem("host_phone");
+            const hostPhone = localStorage.getItem('host_phone');
             let currentPage = "orders";
             let currentOrderFilter = "all";
 
@@ -1845,3 +1845,263 @@
                 }
             }
 
+            async function initRecorder() {
+                // 如果已經初始化過，直接返回
+                if (mediaRecorder) return;
+
+                try {
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const targetOrderId = currentRecordOrderId;
+                        currentRecordOrderId = null;
+
+                        if (audioChunks.length === 0) {
+                            const btnId =
+                                targetOrderId === "new"
+                                    ? "recordBtn"
+                                    : `recordBtn-${targetOrderId}`;
+                            const btn = document.getElementById(btnId);
+                            if (btn) {
+                                btn.textContent = "🎤 按住錄音（最長20秒）";
+                                btn.disabled = false;
+                            }
+                            return;
+                        }
+
+                        const audioBlob = new Blob(audioChunks, {
+                            type: "audio/webm",
+                        });
+                        audioChunks = [];
+
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result;
+                            if (targetOrderId && base64) {
+                                // 顯示預覽
+                                showVoicePreview(targetOrderId, base64);
+                            }
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    };
+                } catch (e) {
+                    // console.error("麥克風權限被拒絕", e);
+                    throw e;
+                }
+            }
+
+            function stopRecord(orderId) {
+                if (!isRecording) return;
+                isRecording = false;
+
+                // 清除計時器
+                if (recordTimeout) {
+                    clearTimeout(recordTimeout);
+                    recordTimeout = null;
+                }
+
+                const btn = document.getElementById(
+                    orderId === "new" ? "recordBtn" : `recordBtn-${orderId}`,
+                );
+                if (btn) {
+                    btn.classList.remove("recording");
+                    btn.textContent = "⏳ 處理中...";
+                    btn.disabled = true;
+                }
+
+                // 保存orderId供onstop回調使用
+                const targetOrderId = currentRecordOrderId;
+
+                if (mediaRecorder && mediaRecorder.state === "recording") {
+                    try {
+                        // 請求最後的數據
+                        mediaRecorder.requestData();
+                        mediaRecorder.stop();
+                    } catch (e) {
+                        // console.error("停止錄音失敗:", e);
+                        // 如果停止失敗，手動處理
+                        if (btn) {
+                            btn.textContent = "🎤 按住錄音（最長20秒）";
+                            btn.disabled = false;
+                        }
+                    }
+                } else {
+                    // 如果沒有在錄音
+                    if (btn) {
+                        btn.textContent = "🎤 按住錄音（最長20秒）";
+                        btn.disabled = false;
+                    }
+                }
+            }
+
+            async function updateOrderVoice(orderId, voiceBase64) {
+                if (!voiceBase64 || voiceBase64.length < 100) {
+                    showToast("錄音無效，請重試");
+                    resetButton(orderId);
+                    return;
+                }
+                try {
+                    const res = await fetch(`${API}/orders/${orderId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ voice_url: voiceBase64 }),
+                    });
+                    if (res.ok) {
+                        showToast("🎤 語音備註已保存");
+                        loadOrders();
+                    } else {
+                        const err = await res.json();
+                        // console.error("保存失敗:", err);
+                        showToast("保存失敗: " + (err.error || ""));
+                        resetButton(orderId);
+                    }
+                } catch (e) {
+                    // console.error("保存失敗:", e);
+                    showToast("保存失敗");
+                    resetButton(orderId);
+                }
+            }
+
+            function resetButton(orderId) {
+                const btn = document.getElementById(
+                    orderId === "new" ? "recordBtn" : `recordBtn-${orderId}`,
+                );
+                if (btn) {
+                    btn.textContent = "🎤 按住錄音（最長20秒）";
+                    btn.disabled = false;
+                }
+            }
+
+            // 刪除新訂單的錄音
+            function deleteAudio() {
+                const voiceInput = document.getElementById("orderVoice");
+                if (voiceInput) voiceInput.value = "";
+                const audioPreview = document.getElementById("audioPreview");
+                const preview = document.getElementById("preview-new");
+                const btn = document.getElementById("recordBtn");
+                if (audioPreview) audioPreview.style.display = "none";
+                if (preview) preview.style.display = "none";
+                if (btn) {
+                    btn.style.display = "block";
+                    btn.textContent = "🎤 按住說話";
+                }
+                delete pendingVoiceData["new"];
+            }
+
+            // 顯示錄音預覽
+            let pendingVoiceData = {};
+
+            function showVoicePreview(orderId, base64) {
+                const btn = document.getElementById(
+                    orderId === "new" ? "recordBtn" : `recordBtn-${orderId}`,
+                );
+                const preview = document.getElementById(`preview-${orderId}`);
+                const previewAudio = document.getElementById(
+                    `previewAudio-${orderId}`,
+                );
+
+                if (btn) btn.style.display = "none";
+                if (preview) {
+                    preview.style.display = "block";
+                    previewAudio.src = base64;
+                }
+
+                // 保存待提交的音頻數據
+                pendingVoiceData[orderId] = base64;
+            }
+
+            // 確認保存錄音
+            async function saveVoice(orderId) {
+                const base64 = pendingVoiceData[orderId];
+                if (!base64) {
+                    showToast("沒有錄音數據");
+                    return;
+                }
+
+                // 新訂單：保存到表單輸入框
+                if (orderId === "new") {
+                    const voiceInput = document.getElementById("orderVoice");
+                    if (voiceInput) voiceInput.value = base64;
+
+                    // 顯示預覽
+                    const preview = document.getElementById("preview-new");
+                    const previewPlayer =
+                        document.getElementById("audioPreviewPlayer");
+                    if (preview) preview.style.display = "none";
+                    const audioPreview =
+                        document.getElementById("audioPreview");
+                    if (audioPreview) {
+                        audioPreview.style.display = "flex";
+                        previewPlayer.src = base64;
+                    }
+
+                    showToast("🎤 語音備註已保存");
+                    delete pendingVoiceData[orderId];
+                    return;
+                }
+
+                // 已有訂單：調用 API 更新
+                try {
+                    const res = await fetch(`${API}/orders/${orderId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ voice_url: base64 }),
+                    });
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        showToast("🎤 語音備註已保存");
+                        delete pendingVoiceData[orderId];
+                        loadOrders();
+                    } else {
+                        showToast("保存失敗: " + (result.error || ""));
+                    }
+                } catch (e) {
+                    // console.error("保存失敗:", e);
+                    showToast("保存失敗");
+                }
+            }
+
+            // 取消錄音
+            function cancelVoice(orderId) {
+                delete pendingVoiceData[orderId];
+
+                const btn = document.getElementById(
+                    orderId === "new" ? "recordBtn" : `recordBtn-${orderId}`,
+                );
+                const preview = document.getElementById(`preview-${orderId}`);
+
+                if (preview) preview.style.display = "none";
+                if (btn) {
+                    btn.style.display = "block";
+                    btn.textContent = "🎤 按住錄音（最長20秒）";
+                    btn.disabled = false;
+                }
+            }
+
+            async function deleteVoice(orderId) {
+                if (!confirm("確定要刪除這段語音備註嗎？")) return;
+                try {
+                    const res = await fetch(`${API}/orders/${orderId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ voice_url: null }),
+                    });
+                    if (res.ok) {
+                        showToast("語音已刪除");
+                        loadOrders();
+                    } else {
+                        showToast("刪除失敗");
+                    }
+                } catch (e) {
+                    showToast("刪除失敗");
+                }
+            }
+
+            // 初始化
+            loadOrders();
+            initRecorder();
+        </script>
+    </body>
+</html>
