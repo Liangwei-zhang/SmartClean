@@ -119,6 +119,32 @@ async def update_status(
 
 
 @router.get("/{cleaner_id}/stats")
+async def get_cleaner_stats(
+    cleaner_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """獲取清潔工統計"""
+    return success_response(data={"jobs": 0})
+
+
+@router.delete("/{cleaner_id}")
+async def delete_cleaner(
+    cleaner_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """刪除清潔工"""
+    result = await db.execute(
+        select(Cleaner).where(Cleaner.id == cleaner_id)
+    )
+    cleaner = result.scalar_one_or_none()
+    
+    if not cleaner:
+        raise HTTPException(status_code=404, detail="清潔工不存在")
+    
+    await db.delete(cleaner)
+    await db.commit()
+    
+    return success_response(message="刪除成功")
 async def get_cleaner_stats(cleaner_id: int, db: AsyncSession = Depends(get_db)):
     """清潔工統計"""
     result = await db.execute(
