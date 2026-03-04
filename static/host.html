@@ -566,13 +566,6 @@
             }
         }
                 }
-            } catch(e) {
-                console.error('Address search error:', e);
-            }
-        }
-        
-        function fillPropertyAddress() {
-            const select = document.getElementById('propertySelect');
             const option = select?.selectedOptions[0];
             if (option) {
                 // Fill in create order form (just property_id)
