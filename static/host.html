@@ -565,13 +565,6 @@
                 btn.textContent = '🔍 驗證';
             }
         }
-                }
-            const option = select?.selectedOptions[0];
-            if (option) {
-                // Fill in create order form (just property_id)
-                document.getElementById('propAddress').value = option.dataset.addr || '';
-            }
-        }
         
         function fillPropertyDetails() {
             // Fill in the "我的房源" form when selecting from dropdown
