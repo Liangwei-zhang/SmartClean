@@ -1081,7 +1081,7 @@
 
                     // 統計 - 轉換為數字比較
                     const myOrders = orders.filter(
-                        (o) => Number(o.assigned_cleaner_id) === cleanerId,
+                        (o) => Number(o.cleaner_id) === cleanerId,
                     );
                     const pending = myOrders.filter(
                         (o) => o.status === "accepted" || o.status === "arrived",
@@ -1186,7 +1186,7 @@
                     let orders = (data.data || []).filter(
                         (o) =>
                             o.status === "open" &&
-                            o.assigned_cleaner_id === null,
+                            o.cleaner_id === null,
                     );
 
                     // 異步計算距離，完成後排序並顯示
@@ -1220,8 +1220,8 @@
                                 return desc ? distB - distA : distA - distB;
                             } else {
                                 // 時間排序 - created_at
-                                const timeA = a.created_at || "";
-                                const timeB = b.created_at || "";
+                                const timeA = a.checkout_time || "";
+                                const timeB = b.checkout_time || "";
                                 return desc ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
                             }
                         });
@@ -1285,7 +1285,7 @@
                     const filter = currentMyTaskFilter;
                     let orders = (data.data || []).filter(
                         (o) =>
-                            Number(o.assigned_cleaner_id) === cleanerId &&
+                            Number(o.cleaner_id) === cleanerId &&
                             o.status !== "open",
                     );
 
