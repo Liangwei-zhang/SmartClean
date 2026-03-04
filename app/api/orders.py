@@ -71,6 +71,7 @@ async def list_orders(
         if prop:
             order_data['property_name'] = prop.name
             order_data['property_address'] = prop.address
+        order_data['host_phone'] = None
         
         # 獲取房東電話
         if o.host_id:
@@ -79,7 +80,7 @@ async def list_orders(
             )
             user = user_result.scalar_one_or_none()
             if user and user.phone:
-                order_data['host_phone'] = user.phone
+                order_data['host_phone'] = user.phone if user else None
         
         order_list.append(order_data)
     
