@@ -932,7 +932,7 @@
                 接单大厅<span style="color: var(--primary)">CP</span>
             </div>
             <button
-                onclick="location.href = 'cleaner.html'"
+                onclick="location.href = 'index.html'"
                 style="
                     border: none;
                     background: none;
@@ -1047,7 +1047,7 @@
             // Skip redirect if cleanerId exists
             function logout() {
                 localStorage.clear();
-                location.href = "cleaner.html";
+                location.href = "index.html";
             }
 
             function showPage(page) {
@@ -1362,7 +1362,7 @@
                             <h3 style="margin:0 0 16px 0;font-size:18px;color:var(--midnight);">📋 確認接單</h3>
                             <div style="background:var(--bg-light);padding:16px;border-radius:12px;margin-bottom:16px;">
                                 <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">📱 聯繫電話</div>
-                                <a href="tel:${e(o.host_phone)}" style="font-weight:700;font-size:18px;color:var(--primary);text-decoration:none;">${e(o.host_phone)}</a>
+                                ${o.host_phone ? `<a href="tel:${e(o.host_phone)}" style="font-weight:700;font-size:18px;color:var(--primary);text-decoration:none;">${e(o.host_phone)}</a>` : '<span style="color:#999;">無電話</span>'}
                             </div>
                             <div style="background:#FFF3E0;padding:12px;border-radius:12px;margin-bottom:20px;border-left:4px solid #FF9800;">
                                 <div style="font-size:13px;color:#E65100;font-weight:600;">⚠️ 提示</div>

@@ -41,10 +41,18 @@ class PropertyCreate(BaseModel):
 class PropertyUpdate(BaseModel):
     name: str | None = None
     address: str | None = None
+    street: str | None = None
+    city: str | None = None
+    province: str | None = None
+    house_number: str | None = None
+    postal_code: str | None = None
     latitude: float | None = None
     longitude: float | None = None
     bedrooms: int | None = None
     bathrooms: int | None = None
+    floor: int | None = None
+    area: float | None = None
+    cleaning_time_minutes: int | None = None
     status: str | None = None
     notes: str | None = None
 
@@ -98,6 +106,8 @@ async def get_property(property_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/{property_id}")
+@router.patch("/{property_id}")
+@router.put("/{property_id}")
 async def update_property(
     property_id: int,
     req: PropertyUpdate,
@@ -137,3 +147,7 @@ async def delete_property(property_id: int, db: AsyncSession = Depends(get_db)):
     await db.commit()
     
     return success_response(message="刪除成功")
+
+
+# PUT is same as PATCH
+update_property_put = update_property

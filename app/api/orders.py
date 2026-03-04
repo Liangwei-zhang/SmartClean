@@ -10,7 +10,7 @@ from sqlmodel import func
 from app.core.database import get_db
 from app.core.response import success_response, error_response
 from app.core.websocket import manager
-from app.models.models import Order, OrderStatus, Cleaner, Property
+from app.models.models import Order, OrderStatus, Cleaner, Property, User
 from pydantic import BaseModel
 
 
@@ -71,6 +71,15 @@ async def list_orders(
         if prop:
             order_data['property_name'] = prop.name
             order_data['property_address'] = prop.address
+        
+        # 獲取房東電話
+        if o.host_id:
+            user_result = await db.execute(
+                select(User).where(User.id == o.host_id)
+            )
+            user = user_result.scalar_one_or_none()
+            if user and user.phone:
+                order_data['host_phone'] = user.phone
         
         order_list.append(order_data)
     
