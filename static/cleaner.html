@@ -1037,7 +1037,7 @@
             }
             const e = escapeHtml;
             const API = "/api";
-            const cleanerId = parseInt(localStorage.getItem('cleaner_id') || localStorage.getItem('user_id'));
+            const cleanerId = Number(localStorage.getItem('cleaner_id')) || Number(localStorage.getItem('user_id')); console.log('cleanerId:', cleanerId, 'cleaner_id from storage:', localStorage.getItem('cleaner_id'), 'user_id:', localStorage.getItem('user_id'));
             const cleanerCode = localStorage.getItem("cleaner_code");
 
             function haptic() {
@@ -1283,7 +1283,7 @@
                     const filter = currentMyTaskFilter;
                     let orders = (data.data || []).filter(
                         (o) =>
-                            Number(o.cleaner_id) === cleanerId &&
+                            String(o.cleaner_id) === String(cleanerId) &&
                             o.status !== "open",
                     );
 
