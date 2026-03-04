@@ -1,7 +1,7 @@
 """
 清潔工 API
 """
-from fastapi import APIRouter, Body, Depends, Query, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlmodel import func
@@ -26,8 +26,8 @@ class CleanerStatusUpdate(BaseModel):
 
 @router.post("")
 async def create_cleaner(
-    name: str = Query(None),
-    phone: str = Query(None),
+    name: str = Body(None),
+    phone: str = Body(None),
     db: AsyncSession = Depends(get_db)
 ):
     """新增清潔工"""
@@ -152,8 +152,8 @@ async def get_cleaner_stats(
 @router.put("/{cleaner_id}")
 async def update_cleaner(
     cleaner_id: int,
-    name: str = Query(None),
-    phone: str = Query(None),
+    name: str = Body(None),
+    phone: str = Body(None),
     db: AsyncSession = Depends(get_db)
 ):
     """更新清潔工"""
