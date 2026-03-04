@@ -103,7 +103,7 @@ async def health():
 
 
 # API 路由
-from app.api import orders, auth, properties, cleaners, order_status, upload, notifications, stats
+from app.api import orders, auth, properties, cleaners, order_status, upload, notifications, stats, geocode
 
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
@@ -117,3 +117,4 @@ app.include_router(stats.router, prefix="/api/stats", tags=["Stats"])
 # WebSocket
 from app.api.orders import websocket_orders
 app.add_api_websocket_route("/api/orders/ws/orders", websocket_orders)
+app.include_router(geocode.router, prefix="/api", tags=["Geocode"])
