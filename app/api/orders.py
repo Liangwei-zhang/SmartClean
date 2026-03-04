@@ -227,6 +227,9 @@ async def update_order(
         elif req["status"] == "completed":
             order.completed_at = func.now()
     
+    if "completion_photos" in req:
+        order.completion_photos = req["completion_photos"]
+    
     await db.commit()
     await db.refresh(order)
     
