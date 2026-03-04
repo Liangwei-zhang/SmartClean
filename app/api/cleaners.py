@@ -1,7 +1,7 @@
 """
 清潔工 API
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlmodel import func
@@ -25,6 +25,29 @@ class CleanerStatusUpdate(BaseModel):
 
 
 @router.get("")
+@router.post("")
+async def create_cleaner(
+    name: str = Query(...),
+    phone: str = Query(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """新增清潔工"""
+    import random
+    import string
+    from passlib.hash import bcrypt
+    chars = string.ascii_uppercase + string.digits
+    code = ''.join(random.choices(chars, k=6))
+    
+    cleaner = Cleaner(name=name, phone=phone, code=code, password_hash=bcrypt.hash("123456"))
+    db.add(cleaner)
+    await db.commit()
+    await db.refresh(cleaner)
+    
+    return success_response(data={"id": cleaner.id, "code": code}, message="新增成功")
+
+
+@router.get("")
+
 async def list_cleaners(
     status: str = None,
     db: AsyncSession = Depends(get_db)
