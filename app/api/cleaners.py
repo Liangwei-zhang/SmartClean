@@ -1,7 +1,7 @@
 """
 清潔工 API
 """
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Body, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlmodel import func
@@ -24,11 +24,10 @@ class CleanerStatusUpdate(BaseModel):
     status: str  # online/offline/busy
 
 
-@router.get("")
 @router.post("")
 async def create_cleaner(
-    name: str = Query(...),
-    phone: str = Query(...),
+    name: str = Query(None),
+    phone: str = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
     """新增清潔工"""
