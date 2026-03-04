@@ -150,6 +150,33 @@ async def get_cleaner_stats(
     return success_response(data={"jobs": 0})
 
 
+@router.put("/{cleaner_id}")
+async def update_cleaner(
+    cleaner_id: int,
+    name: str = Query(None),
+    phone: str = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    """更新清潔工"""
+    result = await db.execute(
+        select(Cleaner).where(Cleaner.id == cleaner_id)
+    )
+    cleaner = result.scalar_one_or_none()
+    
+    if not cleaner:
+        raise HTTPException(status_code=404, detail="清潔工不存在")
+    
+    if name:
+        cleaner.name = name
+    if phone:
+        cleaner.phone = phone
+    
+    await db.commit()
+    await db.refresh(cleaner)
+    
+    return success_response(data={"id": cleaner.id}, message="更新成功")
+
+
 @router.delete("/{cleaner_id}")
 async def delete_cleaner(
     cleaner_id: int,
