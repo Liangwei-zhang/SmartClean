@@ -992,11 +992,17 @@
             }
 
             function hideLoadingForce() {
-                const overlay = document.getElementById("loadingOverlay");
-                if(overlay) {
-                    overlay.classList.remove("active");
+                try {
+                    const overlay = document.getElementById("loadingOverlay");
+                    if (overlay) {
+                        overlay.classList.remove("active");
+                        overlay.style.display = "none";
+                        overlay.style.visibility = "hidden";
+                        overlay.style.opacity = "0";
+                    }
                     document.body.classList.remove("no-scroll");
-                }
+                    document.body.style.overflow = "";
+                } catch(e) {}
             }
 
             async function loadProperties() {
@@ -1724,9 +1730,15 @@
             }
 
             function hideLoading() {
-                const overlay = document.getElementById("loadingOverlay");
-                overlay.classList.remove("active");
-                document.body.classList.remove("no-scroll");
+                try {
+                    const overlay = document.getElementById("loadingOverlay");
+                    if (overlay) {
+                        overlay.classList.remove("active");
+                        overlay.style.display = "none";
+                    }
+                    document.body.classList.remove("no-scroll");
+                    document.body.style.overflow = "";
+                } catch(e) {}
             }
 
             // 編輯文字備註
