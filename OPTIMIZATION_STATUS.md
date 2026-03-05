@@ -18,7 +18,7 @@
 |------|------|----------|
 | Asyncpg 異步驅動 | ✅ 完成 | `app/core/database.py` |
 | PgBouncer 連接池 | ✅ 已配置 | `docker-compose.prod.yml` |
-| PostGIS 空間索引 | ⚠️ 需確認是否啟用 |
+| PostGIS 空間索引 | ✅ 完成 | GiST 索引 + ST_DWithin |
 | 樂觀鎖 (version) | ✅ 完成 | `app/api/orders.py` |
 
 ### 第三階段：快取與即時通訊
@@ -46,6 +46,7 @@
 
 1. **Granian 啟動腳本** - 從 uvicorn 改為 granian
 2. **Dockerfile CMD** - 更新為使用 granian
+3. **PostGIS 空間索引** - 創建 GiST 索引加速附近查詢
 
 ---
 
