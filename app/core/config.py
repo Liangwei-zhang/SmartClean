@@ -24,8 +24,13 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     
+    # Custom
+    X_BEARER_TOKEN: str = "your_bearer_token_here"
+    NICO_TELEGRAM_ID: str = ""
+    
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache()
