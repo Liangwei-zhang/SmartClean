@@ -1041,6 +1041,51 @@
             const cleanerId = Number(localStorage.getItem('cleaner_id')) || Number(localStorage.getItem('user_id')); console.log('cleanerId:', cleanerId, 'cleaner_id from storage:', localStorage.getItem('cleaner_id'), 'user_id:', localStorage.getItem('user_id'));
             const cleanerCode = localStorage.getItem("cleaner_code");
 
+            // WebSocket 連接
+            let ws = null;
+            let wsReconnectTimer = null;
+            
+            function connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = protocol + "//" + window.location.host + "/api/orders/ws/orders";
+                
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'new_order' || msg.type === 'order_accepted') {
+                            // 有新訂單或訂單被搶，刷新列表
+                            loadOpenOrders();
+                        }
+                    } catch(e) {}
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket disconnected, reconnecting...');
+                    wsReconnectTimer = setTimeout(connectWebSocket, 3000);
+                };
+                
+                ws.onerror = (e) => {
+                    console.log('WebSocket error');
+                };
+            }
+            
+            function disconnectWebSocket() {
+                if (ws) {
+                    ws.close();
+                    ws = null;
+                }
+                if (wsReconnectTimer) {
+                    clearTimeout(wsReconnectTimer);
+                    wsReconnectTimer = null;
+                }
+            }
+
             function haptic() {
                 if (navigator.vibrate) navigator.vibrate(20);
             }
@@ -1069,6 +1114,14 @@
                     page === "open" ? "flex" : "none";
                 document.getElementById("myTaskBar").style.display =
                     page === "my" ? "flex" : "none";
+                
+                // WebSocket 連接/斷開
+                if (page === "open") {
+                    connectWebSocket();
+                } else {
+                    disconnectWebSocket();
+                }
+                
                 page === "open" ? loadOpenOrders() : loadMyOrders();
             }
 
