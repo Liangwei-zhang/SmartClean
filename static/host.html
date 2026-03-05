@@ -991,6 +991,14 @@
                 }
             }
 
+            function hideLoadingForce() {
+                const overlay = document.getElementById("loadingOverlay");
+                if(overlay) {
+                    overlay.classList.remove("active");
+                    document.body.classList.remove("no-scroll");
+                }
+            }
+
             async function loadProperties() {
                 try {
                     showLoading();
