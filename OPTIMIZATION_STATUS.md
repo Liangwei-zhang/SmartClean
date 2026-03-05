@@ -17,7 +17,7 @@
 | 項目 | 狀態 | 文件位置 |
 |------|------|----------|
 | Asyncpg 異步驅動 | ✅ 完成 | `app/core/database.py` |
-| PgBouncer 連接池 | ✅ 已配置 | `docker-compose.prod.yml` |
+| PgBouncer 連接池 | ✅ 已部署 | Transaction pooling, port 6432 |
 | PostGIS 空間索引 | ✅ 完成 | GiST 索引 + ST_DWithin |
 | 樂觀鎖 (version) | ✅ 完成 | `app/api/orders.py` |
 
