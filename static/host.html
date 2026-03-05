@@ -1462,9 +1462,17 @@
 
             async function deleteOrder(id) {
                 if (!confirm("確定要取消此訂單嗎？")) return;
-                await fetch(`${API}/orders/${id}`, { method: "DELETE" });
-                showToast("已取消訂單");
-                loadOrders();
+                try {
+                    const res = await fetch(`${API}/orders/${id}`, { method: "DELETE" });
+                    if (res.ok) {
+                        showToast("已取消訂單");
+                        loadOrders();
+                    } else {
+                        showToast("刪除失敗");
+                    }
+                } catch (e) {
+                    showToast("刪除失敗");
+                }
             }
 
             async function editOrder(id) {

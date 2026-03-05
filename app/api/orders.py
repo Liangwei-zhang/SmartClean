@@ -277,3 +277,23 @@ async def websocket_orders(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket, "orders")
+
+
+@router.delete("/{order_id}")
+async def delete_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """刪除訂單"""
+    result = await db.execute(
+        select(Order).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="訂單不存在")
+    
+    await db.delete(order)
+    await db.commit()
+    
+    return success_response(message="刪除成功")
