@@ -236,6 +236,15 @@ async def update_order(
     if "cleaner_name" in req:
         order.cleaner_name = req["cleaner_name"]
     
+    if "price" in req:
+        order.price = req["price"]
+    
+    if "text_notes" in req:
+        order.text_notes = req["text_notes"]
+    
+    if "checkout_time" in req:
+        order.checkout_time = req["checkout_time"]
+    
     await db.commit()
     await db.refresh(order)
     
