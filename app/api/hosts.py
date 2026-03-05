@@ -31,10 +31,10 @@ async def verify_host_code(code: str, db: AsyncSession = Depends(get_db)):
         select(User).where(User.code == code)
     )
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="驗證碼錯誤")
-    
+
     return success_response(data={
         "id": user.id,
         "name": user.name,
@@ -50,10 +50,10 @@ async def get_host(host_id: int, db: AsyncSession = Depends(get_db)):
         select(User).where(User.id == host_id)
     )
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="房東不存在")
-    
+
     return success_response(data={
         "id": user.id,
         "name": user.name,
@@ -78,12 +78,41 @@ async def create_host(
     chars = string.ascii_uppercase + string.digits
     code = ''.join(random.choices(chars, k=6))
     
-    user = User(name=name, phone=phone, code=code, password_hash=bcrypt.hash("123456"))
+    # 密碼不能超過72字節，需要截斷
+    password = "123456"[:72]
+    user = User(name=name, phone=phone, code=code, password_hash=bcrypt.hash(password))
     db.add(user)
     await db.commit()
     await db.refresh(user)
     
     return success_response(data={"id": user.id, "code": code}, message="新增成功")
+
+
+@router.put("/{host_id}")
+async def update_host(
+    host_id: int,
+    name: str = Body(None),
+    phone: str = Body(None),
+    db: AsyncSession = Depends(get_db)
+):
+    """更新房東"""
+    result = await db.execute(
+        select(User).where(User.id == host_id)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="房東不存在")
+    
+    if name:
+        user.name = name
+    if phone:
+        user.phone = phone
+    
+    await db.commit()
+    await db.refresh(user)
+    
+    return success_response(data={"id": user.id, "name": user.name, "phone": user.phone}, message="更新成功")
 
 
 @router.delete("/{host_id}")
@@ -102,16 +131,16 @@ async def delete_host(
     await db.execute(
         update(Order).where(Order.host_id == host_id).values(host_id=None, host_name=None, host_phone=None)
     )
-    
+
     result = await db.execute(
         select(User).where(User.id == host_id)
     )
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="房東不存在")
-    
+
     await db.delete(user)
     await db.commit()
-    
+
     return success_response(message="刪除成功")
