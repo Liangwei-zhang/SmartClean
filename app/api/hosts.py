@@ -24,6 +24,25 @@ async def list_hosts(db: AsyncSession = Depends(get_db)):
     } for u in users])
 
 
+@router.get("/code/{code}")
+async def verify_host_code(code: str, db: AsyncSession = Depends(get_db)):
+    """通過驗證碼獲取房東信息"""
+    result = await db.execute(
+        select(User).where(User.code == code)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="驗證碼錯誤")
+    
+    return success_response(data={
+        "id": user.id,
+        "name": user.name,
+        "phone": user.phone,
+        "code": user.code,
+    })
+
+
 @router.post("")
 async def create_host(
     name: str = Body(None),
