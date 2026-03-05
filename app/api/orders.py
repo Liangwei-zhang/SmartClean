@@ -88,8 +88,8 @@ async def list_orders(
         
         order_list.append(order_data)
     
-    # 設置緩存 (L1: 3秒, L2: 30秒)
-    await set_cache(cache_key_str, order_list, ttl_l1=3, ttl_l2=30)
+    # 設置緩存 (L1: 2秒, L2: 5秒) - 短TTL支持即時更新
+    await set_cache(cache_key_str, order_list, ttl_l1=2, ttl_l2=5)
     
     return success_response(data=order_list)
 
@@ -131,8 +131,8 @@ async def get_cleaner_orders(
         
         order_list.append(order_data)
     
-    # 設置緩存 (L1: 3秒, L2: 30秒)
-    await set_cache(cache_key_str, order_list, ttl_l1=3, ttl_l2=30)
+    # 設置緩存 (L1: 2秒, L2: 5秒) - 短TTL支持即時更新
+    await set_cache(cache_key_str, order_list, ttl_l1=2, ttl_l2=5)
     
     return success_response(data=order_list)
 
@@ -185,8 +185,9 @@ async def create_order(req: CreateOrderRequest, db: AsyncSession = Depends(get_d
         "data": order_data
     })
     
-    # 清除訂單列表緩存
+    # 清除訂單列表緩存 (立即清除，不等待TTL)
     await delete_pattern("orders:*")
+    await delete_pattern("cleaner_orders:*")
     
     return success_response(data=serialize_order(order), message="訂單創建成功")
 

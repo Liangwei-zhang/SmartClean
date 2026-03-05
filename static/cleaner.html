@@ -1059,8 +1059,10 @@
                     try {
                         const msg = JSON.parse(event.data);
                         if (msg.type === 'new_order' || msg.type === 'order_accepted') {
-                            // 有新訂單或訂單被搶，刷新列表
-                            loadOpenOrders();
+                            // 有新訂單或訂單被搶，且當前在接單大廳則刷新
+                            if (document.getElementById("pageOpen").style.display !== "none") {
+                                loadOpenOrders();
+                            }
                         }
                     } catch(e) {}
                 };
@@ -1799,6 +1801,8 @@
 
             loadStats();
             loadOpenOrders();
+            connectWebSocket(); // 連接 WebSocket 接收即時更新
+            
             setInterval(() => {
                 if (
                     document.getElementById("pageOpen").style.display !== "none"
