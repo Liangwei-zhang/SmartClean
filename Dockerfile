@@ -33,5 +33,5 @@ USER appuser
 # 暴露端口
 EXPOSE 80
 
-# 啟動命令
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "4"]
+# 啟動命令 - 使用 Granian (Rust 驅動)
+CMD ["granian", "--interface", "asgi", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "4"]
