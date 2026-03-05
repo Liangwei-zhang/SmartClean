@@ -879,6 +879,7 @@
                     const min = String(d.getMinutes()).padStart(2, "0");
                     return `${y}-${m}-${day} ${h}:${min}`;
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     return isoString;
                 }
             }
@@ -983,8 +984,10 @@
                         '<div style="text-align:center; padding:60px; color:gray; font-weight:600;">☕ 暫無訂單，點擊 + 號發布</div>';
                     hideLoading();
                 } catch (e) {
-                    hideLoading();
+                    console.error("loadOrders error:", e);
                     showToast("加載失敗");
+                } finally {
+                    hideLoading();
                 }
             }
 
@@ -1028,6 +1031,7 @@
                         '<div style="text-align:center; padding:60px; color:gray; font-weight:600;">🏡 點擊 + 號新增您的房源</div>';
                     hideLoading();
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     hideLoading();
                     showToast("加載房源失敗");
                 }
@@ -1046,6 +1050,7 @@
                         showToast("刪除失敗");
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     showToast("刪除失敗");
                 }
             }
@@ -1187,6 +1192,7 @@
 
                     openModal();
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     showToast("載入失敗");
                 }
             }
@@ -1448,6 +1454,7 @@
                         status.style.color = "oklch(55% 0.18 25)";
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     status.textContent = "⚠️ 驗證失敗，請重試";
                     status.style.color = "oklch(55% 0.18 25)";
                 }
@@ -1534,6 +1541,7 @@
 
                     openModal();
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     showToast("載入失敗");
                 }
             }
@@ -1584,6 +1592,7 @@
                     }
                 `;
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     return '<div style="color:#999;">載入失敗</div>';
                 }
             }
@@ -1607,6 +1616,7 @@
                         showToast("驗收失敗");
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     showToast("驗收失敗");
                 }
             }
@@ -1638,6 +1648,7 @@
                         photos = Object.values(photosJson);
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     // console.error("Parse photos error:", e);
                     photos = [];
                 }
@@ -1898,6 +1909,7 @@
                         reader.readAsDataURL(audioBlob);
                     };
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     // console.error("麥克風權限被拒絕", e);
                     throw e;
                 }
@@ -1931,6 +1943,7 @@
                         mediaRecorder.requestData();
                         mediaRecorder.stop();
                     } catch (e) {
+                    console.error("loadOrders error:", e);
                         // console.error("停止錄音失敗:", e);
                         // 如果停止失敗，手動處理
                         if (btn) {
@@ -1969,6 +1982,7 @@
                         resetButton(orderId);
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     // console.error("保存失敗:", e);
                     showToast("保存失敗");
                     resetButton(orderId);
@@ -2070,6 +2084,7 @@
                         showToast("保存失敗: " + (result.error || ""));
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     // console.error("保存失敗:", e);
                     showToast("保存失敗");
                 }
@@ -2107,6 +2122,7 @@
                         showToast("刪除失敗");
                     }
                 } catch (e) {
+                    console.error("loadOrders error:", e);
                     showToast("刪除失敗");
                 }
             }
