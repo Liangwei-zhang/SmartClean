@@ -71,7 +71,9 @@ async def list_orders(
         if prop:
             order_data['property_name'] = prop.name
             order_data['property_address'] = prop.address
-        order_data['host_phone'] = None
+            # 從房源獲取房東電話
+            if prop.host_phone:
+                order_data['host_phone'] = prop.host_phone
         
         # 獲取房東電話
         if o.host_id:
