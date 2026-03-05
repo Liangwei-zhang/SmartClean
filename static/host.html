@@ -890,7 +890,7 @@
                     const res = await fetch(`${API}/orders`);
                     const data = await res.json();
                     let orders = (data.data || []).filter(
-                        (o) => Number(o.host_id) === Number(hostId),
+                        (o) => o.host_phone === hostPhone,
                     );
                     // 根據篩選條件過濾
                     if (currentOrderFilter !== "all") {
@@ -1543,7 +1543,8 @@
                                 closeModal();
                                 loadOrders();
                             } else {
-                                showToast("更新失敗");
+                                const err = await putRes.json();
+                                showToast("更新失敗: " + (err.detail || "未知錯誤"));
                             }
                         };
 
