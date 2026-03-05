@@ -14,5 +14,4 @@ exec granian --interface asgi \
     --runtime-threads 4 \
     --backlog 2048 \
     --http auto \
-    --loop uvloop \
     --log-level warning

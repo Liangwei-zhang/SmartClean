@@ -887,10 +887,10 @@
             async function loadOrders() {
                 try {
                     showLoading();
-                    const res = await fetch(`${API}/orders`);
+                    const res = await fetch(`${API}/orders?status=all`);
                     const data = await res.json();
                     let orders = (data.data || []).filter(
-                        (o) => o.host_phone === hostPhone,
+                        (o) => o.host_phone && o.host_phone.trim() === hostPhone,
                     );
                     // 根據篩選條件過濾
                     if (currentOrderFilter !== "all") {
@@ -899,14 +899,14 @@
                             orders = orders.filter(
                                 (o) =>
                                     o.status === "completed" &&
-                                    o.accepted_by_host === 1,
+                                    o.accepted_by_host == 1,
                             );
                         } else if (currentOrderFilter === "completed") {
                             // 待驗收：status=completed 且 accepted_by_host≠1
                             orders = orders.filter(
                                 (o) =>
                                     o.status === "completed" &&
-                                    o.accepted_by_host !== 1,
+                                    o.accepted_by_host != 1,
                             );
                         } else {
                             orders = orders.filter(
@@ -1491,7 +1491,7 @@
 
             async function editOrder(id) {
                 try {
-                    const res = await fetch(API + "/orders");
+                    const res = await fetch(API + "/orders?status=all");
                     const data = await res.json();
                     const order = (data.data || []).find((o) => o.id === id);
                     if (!order) {
@@ -1595,7 +1595,7 @@
                             : photosJson;
                     if (!photos || photos.length === 0)
                         return '<div style="color:#999;font-size:13px;">暫無照片</div>';
-                    const accepted = acceptedByHost === 1;
+                    const accepted = acceptedByHost == 1 || acceptedByHost === true;
                     return `
                     <div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0;">
                         ${photos.map((p) => `<img loading="lazy" src="${p}" style="width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;">`).join("")}
@@ -1693,7 +1693,7 @@
                 </div>`;
                 }
 
-                if (acceptedByHost === 1) {
+                if (acceptedByHost == 1 || acceptedByHost === true) {
                     actions.innerHTML = `<div style="padding:16px;background:#E8F5E9;border-radius:16px;text-align:center;color:#2E7D32;font-weight:700;font-size:16px;">✅ 已驗收</div>`;
                 } else {
                     actions.innerHTML = `<button onclick="acceptCompletion(${currentViewOrderId})" style="width:100%;padding:18px;border-radius:16px;border:none;background:var(--primary);color:white;font-weight:700;font-size:16px;cursor:pointer;">✅ 驗收完成</button>`;

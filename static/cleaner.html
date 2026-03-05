@@ -335,7 +335,7 @@
                 border-radius: 50px;
                 font-weight: 800;
                 transition: 0.5s var(--spring);
-                z-index: 10000;
+                z-index: 10002;
             }
             .toast.show {
                 transform: translateX(-50%) translateY(0);
@@ -1006,6 +1006,7 @@
                     id="photoInput"
                     accept="image/*"
                     multiple
+                    onchange="if(this.files.length>5){alert('一次最多選擇5張圖片');this.value='';return false;}"
                 />
                 <div class="photo-actions">
                     <button
@@ -1278,14 +1279,10 @@
             async function loadMyOrders() {
                 try {
                     showLoading();
-                    const res = await fetch(API + "/orders?status=all");
+                    const res = await fetch(API + "/orders/cleaner/" + cleanerId);
                     const data = await res.json();
                     const filter = currentMyTaskFilter;
-                    let orders = (data.data || []).filter(
-                        (o) =>
-                            String(o.cleaner_id) === String(cleanerId) &&
-                            o.status !== "open",
-                    );
+                    let orders = (data.data || []);
 
                     // 過濾
                     if (filter !== "all") {
@@ -1520,7 +1517,7 @@
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    return data.url;
+                    return data.data.url;
                 }
                 throw new Error("上傳失敗");
             }
@@ -1528,17 +1525,64 @@
             function triggerPhotoUpload(index) {
                 const input = document.getElementById("photoInput");
                 input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        try {
-                            showToast("上傳中...");
-                            const url = await uploadPhotoToServer(file);
-                            uploadedPhotos[index] = url;
-                            renderPhotoGrid();
-                            showToast("上傳成功");
-                        } catch (err) {
-                            showToast("上傳失敗，請重試");
+                    const files = Array.from(e.target.files);
+                    if (files.length === 0) return;
+                    
+                    // 限制最多選擇5張
+                    if (files.length > 5) {
+                        showToast("一次最多選擇5張圖片");
+                        input.value = "";
+                        return;
+                    }
+                    
+                    // 限制最多5張
+                    const remainingSlots = 6 - uploadedPhotos.filter(p => p).length;
+                    const filesToUpload = files.slice(0, remainingSlots);
+                    
+                    if (filesToUpload.length === 0) {
+                        showToast("已上傳6張照片，無法繼續添加");
+                        input.value = "";
+                        return;
+                    }
+                    
+                    showToast(`上傳中... (${filesToUpload.length}張)`);
+                    
+                    // 壓縮並上傳所有圖片
+                    const uploadPromises = filesToUpload.map((file, i) => {
+                        return new Promise((resolve) => {
+                            compressImage(file, 1200, 0.8, async (base64) => {
+                                try {
+                                    // 將 base64 轉為 Blob
+                                    const res = await fetch(base64);
+                                    const blob = await res.blob();
+                                    const compressedFile = new File([blob], "photo.jpg", { type: "image/jpeg" });
+                                    const url = await uploadPhotoToServer(compressedFile);
+                                    resolve(url);
+                                } catch (err) {
+                                    resolve(null);
+                                }
+                            });
+                        });
+                    });
+                    
+                    const urls = await Promise.all(uploadPromises);
+                    
+                    // 填充到空位
+                    let currentIndex = index;
+                    for (const url of urls) {
+                        if (url && currentIndex < 5) {
+                            uploadedPhotos[currentIndex] = url;
+                            currentIndex++;
                         }
+                    }
+                    
+                    renderPhotoGrid();
+                    
+                    const successCount = urls.filter(u => u).length;
+                    if (successCount > 0) {
+                        showToast(`上傳成功 (${successCount}張)`);
+                    } else {
+                        showToast("上傳失敗，請重試");
                     }
                     input.value = "";
                 };

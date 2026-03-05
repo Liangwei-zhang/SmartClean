@@ -10,6 +10,7 @@ from sqlmodel import func
 from app.core.database import get_db
 from app.core.response import success_response, error_response
 from app.core.websocket import manager
+from app.core.cache import get_from_cache, set_cache, cache_key, delete_pattern
 from app.models.models import Order, OrderStatus, Cleaner, Property, User
 from pydantic import BaseModel
 
@@ -49,42 +50,89 @@ async def list_orders(
     status: str = "open",
     db: AsyncSession = Depends(get_db)
 ):
-    """訂單列表 - 包含房源信息"""
-    query = select(Order)
+    """訂單列表 - 包含房源信息 (含緩存)"""
+    # 嘗試從緩存獲取
+    cache_key_str = cache_key("orders", status=status)
+    cached = await get_from_cache(cache_key_str)
+    if cached is not None:
+        return success_response(data=cached)
+    
+    # 使用 JOIN 一次性獲取訂單和房源信息
+    query = (
+        select(Order, Property)
+        .outerjoin(Property, Order.property_id == Property.id)
+        .outerjoin(User, Order.host_id == User.id)
+    )
+    
     if status and status != "all":
         query = query.where(Order.status == status)
     query = query.order_by(Order.created_at.desc())
     
     result = await db.execute(query)
-    orders = result.scalars().all()
+    rows = result.all()
     
-    # 獲取每個訂單的房源信息
+    # 處理結果
     order_list = []
-    for o in orders:
+    for row in rows:
+        o = row[0]
+        prop = row[1] if len(row) > 1 else None
+        
         order_data = serialize_order(o)
         
-        # 獲取房源信息
-        prop_result = await db.execute(
-            select(Property).where(Property.id == o.property_id)
-        )
-        prop = prop_result.scalar_one_or_none()
+        # 房源信息
         if prop:
             order_data['property_name'] = prop.name
             order_data['property_address'] = prop.address
-            # 從房源獲取房東電話
             if prop.host_phone:
                 order_data['host_phone'] = prop.host_phone
         
-        # 獲取房東電話
-        if o.host_id:
-            user_result = await db.execute(
-                select(User).where(User.id == o.host_id)
-            )
-            user = user_result.scalar_one_or_none()
-            if user and user.phone:
-                order_data['host_phone'] = user.phone if user else None
+        order_list.append(order_data)
+    
+    # 設置緩存 (L1: 3秒, L2: 30秒)
+    await set_cache(cache_key_str, order_list, ttl_l1=3, ttl_l2=30)
+    
+    return success_response(data=order_list)
+
+
+@router.get("/cleaner/{cleaner_id}")
+async def get_cleaner_orders(
+    cleaner_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """清潔員訂單列表 (含緩存)"""
+    # 嘗試從緩存獲取
+    cache_key_str = cache_key("cleaner_orders", cleaner_id=cleaner_id)
+    cached = await get_from_cache(cache_key_str)
+    if cached is not None:
+        return success_response(data=cached)
+    
+    # 查詢清潔員的訂單
+    query = (
+        select(Order, Property)
+        .outerjoin(Property, Order.property_id == Property.id)
+        .where(Order.cleaner_id == cleaner_id)
+        .where(Order.status != OrderStatus.OPEN)
+        .order_by(Order.created_at.desc())
+    )
+    
+    result = await db.execute(query)
+    rows = result.all()
+    
+    order_list = []
+    for row in rows:
+        o = row[0]
+        prop = row[1] if len(row) > 1 else None
+        
+        order_data = serialize_order(o)
+        
+        if prop:
+            order_data['property_name'] = prop.name
+            order_data['property_address'] = prop.address
         
         order_list.append(order_data)
+    
+    # 設置緩存 (L1: 3秒, L2: 30秒)
+    await set_cache(cache_key_str, order_list, ttl_l1=3, ttl_l2=30)
     
     return success_response(data=order_list)
 
@@ -136,6 +184,9 @@ async def create_order(req: CreateOrderRequest, db: AsyncSession = Depends(get_d
         "type": "new_order",
         "data": order_data
     })
+    
+    # 清除訂單列表緩存
+    await delete_pattern("orders:*")
     
     return success_response(data=serialize_order(order), message="訂單創建成功")
 
@@ -202,6 +253,10 @@ async def accept_order(
         "data": order_data
     })
     
+    # 清除緩存
+    await delete_pattern("orders:*")
+    await delete_pattern("cleaner_orders:*")
+    
     return success_response(message="搶單成功")
 
 
@@ -247,8 +302,15 @@ async def update_order(
     if "checkout_time" in req:
         order.checkout_time = req["checkout_time"]
     
+    if "accepted_by_host" in req:
+        order.accepted_by_host = bool(req["accepted_by_host"])
+    
     await db.commit()
     await db.refresh(order)
+    
+    # 清除訂單列表緩存
+    await delete_pattern("orders:*")
+    await delete_pattern("cleaner_orders:*")
     
     return success_response(data=serialize_order(order))
 
@@ -297,5 +359,8 @@ async def delete_order(
     
     await db.delete(order)
     await db.commit()
+    
+    # 清除訂單列表緩存
+    await delete_pattern("orders:*")
     
     return success_response(message="刪除成功")
