@@ -74,13 +74,12 @@ async def create_host(
     
     import random
     import string
-    from passlib.hash import bcrypt
     chars = string.ascii_uppercase + string.digits
     code = ''.join(random.choices(chars, k=6))
     
-    # 密碼不能超過72字節，需要截斷
-    password = "123456"[:72]
-    user = User(name=name, phone=phone, code=code, password_hash=bcrypt.hash(password))
+    # 臨時使用簡單哈希
+    password_hash = f"temp_{code}"
+    user = User(name=name, phone=phone, code=code, password_hash=password_hash)
     db.add(user)
     await db.commit()
     await db.refresh(user)

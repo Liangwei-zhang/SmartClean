@@ -37,9 +37,9 @@ async def create_cleaner(
     chars = string.ascii_uppercase + string.digits
     code = ''.join(random.choices(chars, k=6))
     
-    # 密碼不能超過72字節，需要截斷
-    password = "123456"[:72]
-    cleaner = Cleaner(name=name, phone=phone, code=code, password_hash=bcrypt.hash(password))
+    # 臨時使用簡單哈希
+    password_hash = f"temp_{code}"
+    cleaner = Cleaner(name=name, phone=phone, code=code, password_hash=password_hash)
     db.add(cleaner)
     await db.commit()
     await db.refresh(cleaner)
