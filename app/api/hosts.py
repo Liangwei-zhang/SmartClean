@@ -43,6 +43,25 @@ async def verify_host_code(code: str, db: AsyncSession = Depends(get_db)):
     })
 
 
+@router.get("/{host_id}")
+async def get_host(host_id: int, db: AsyncSession = Depends(get_db)):
+    """獲取房東詳情"""
+    result = await db.execute(
+        select(User).where(User.id == host_id)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="房東不存在")
+    
+    return success_response(data={
+        "id": user.id,
+        "name": user.name,
+        "phone": user.phone,
+        "code": user.code,
+    })
+
+
 @router.post("")
 async def create_host(
     name: str = Body(None),
