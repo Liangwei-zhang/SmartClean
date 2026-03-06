@@ -921,12 +921,12 @@
         </style>
     </head>
     <body>
-        <!-- 加載遮罩 -->
+
         <div id="loadingOverlay" class="loading-overlay">
             <div class="loading-spinner"></div>
             <div class="loading-text">載入中...</div>
         </div>
-
+        <!-- 加載遮罩 -->
         <header>
             <div class="logo">
                 接单大厅<span style="color: var(--primary)">CP</span>
@@ -966,7 +966,7 @@
                 onclick="showPage('open')"
             >
                 <span>📥</span>
-                <span>搶單大廳</span>
+                <span>搶單大廳</span><span id="wsStatus" style="font-size:10px;margin-left:2px;">🔴</span>
             </button>
             <button class="nav-tab" id="navMy" onclick="showPage('my')">
                 <span>📋</span>
@@ -1046,30 +1046,72 @@
             let wsReconnectTimer = null;
             
             function connectWebSocket() {
+                // 防止重複連接
+                if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                    console.log('WebSocket already connected or connecting');
+                    return;
+                }
+                
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const wsUrl = protocol + "//" + window.location.host + "/api/orders/ws/orders";
+                console.log('WebSocket connecting to:', wsUrl);
                 
                 ws = new WebSocket(wsUrl);
                 
                 ws.onopen = () => {
                     console.log('WebSocket connected');
+                    document.getElementById('wsStatus').textContent = '🟢';
+                    // 发送心跳
+                    setInterval(() => {
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({type: 'ping'}));
+                        }
+                    }, 25000);
                 };
                 
                 ws.onmessage = (event) => {
+                    console.log('WS received:', event.data);
                     try {
                         const msg = JSON.parse(event.data);
-                        if (msg.type === 'new_order' || msg.type === 'order_accepted') {
-                            // 有新訂單或訂單被搶，且當前在接單大廳則刷新
-                            if (document.getElementById("pageOpen").style.display !== "none") {
+                        console.log('WS parsed:', msg);
+                        
+                        // 心跳回應
+                        if (msg.type === 'pong') {
+                            console.log('WS heartbeat ok');
+                            return;
+                        }
+                        
+                        // 有新訂單
+                        if (msg.type === 'new_order') {
+                            console.log('New order detected, refreshing...');
+                            loadOpenOrders();
+                            loadMyOrders();
+                            showToast("🔔 有新訂單！");
+                        }
+                        // 訂單被搶（其他人搶單）
+                        else if (msg.type === 'order_accepted') {
+                            const acceptedCleanerId = msg.data?.cleaner_id;
+                            if (acceptedCleanerId == cleanerId) {
+                                // 自己搶單成功
+                            } else {
                                 loadOpenOrders();
                             }
                         }
-                    } catch(e) {}
+                        // 訂單更新
+                        else if (msg.type === 'order_updated') {
+                            loadOpenOrders();
+                            loadMyOrders();
+                        }
+                    } catch(e) {
+                        console.error('WS parse error:', e);
+                    }
                 };
                 
                 ws.onclose = () => {
-                    console.log('WebSocket disconnected, reconnecting...');
-                    wsReconnectTimer = setTimeout(connectWebSocket, 3000);
+                    console.log('WebSocket disconnected');
+                    document.getElementById('wsStatus').textContent = '🔴';
+                    // 5秒後重連
+                    wsReconnectTimer = setTimeout(connectWebSocket, 5000);
                 };
                 
                 ws.onerror = (e) => {
@@ -1117,19 +1159,14 @@
                 document.getElementById("myTaskBar").style.display =
                     page === "my" ? "flex" : "none";
                 
-                // WebSocket 連接/斷開
-                if (page === "open") {
-                    connectWebSocket();
-                } else {
-                    disconnectWebSocket();
-                }
+                // WebSocket 保持連接，不斷開
                 
                 page === "open" ? loadOpenOrders() : loadMyOrders();
             }
 
             async function loadStats() {
                 try {
-                    const res = await fetch(API + "/orders");
+                    const res = await fetch(API + "/orders?status=all");
                     const data = await res.json();
                     const orders = data.data || [];
 
@@ -1289,6 +1326,7 @@
                         }
 
                         list.innerHTML = orders
+                        .reverse()
                         .map(
                             (o) => `
                 <div class="card">
@@ -1479,19 +1517,23 @@
                 }
             }
 
-            // 加載動畫控制
+            // 加載動畫控制 (已停用)
             function showLoading(text = "載入中...") {
                 const overlay = document.getElementById("loadingOverlay");
-                const textEl = overlay.querySelector(".loading-text");
-                textEl.textContent = text;
-                overlay.classList.add("active");
-                document.body.classList.add("no-scroll");
+                if (overlay) {
+                    const textEl = overlay.querySelector(".loading-text");
+                    if (textEl) textEl.textContent = text;
+                    overlay.classList.add("active");
+                    document.body.classList.add("no-scroll");
+                }
             }
 
             function hideLoading() {
                 const overlay = document.getElementById("loadingOverlay");
-                overlay.classList.remove("active");
-                document.body.classList.remove("no-scroll");
+                if (overlay) {
+                    overlay.classList.remove("active");
+                    document.body.classList.remove("no-scroll");
+                }
             }
 
             function showToast(msg) {
@@ -1802,13 +1844,6 @@
             loadStats();
             loadOpenOrders();
             connectWebSocket(); // 連接 WebSocket 接收即時更新
-            
-            setInterval(() => {
-                if (
-                    document.getElementById("pageOpen").style.display !== "none"
-                )
-                    loadOpenOrders();
-            }, 60000);
         </script>
     </body>
 </html>

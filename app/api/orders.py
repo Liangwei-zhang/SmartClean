@@ -251,7 +251,7 @@ async def accept_order(
     
     await manager.broadcast("orders", {
         "type": "order_accepted",
-        "data": order_data
+        "data": {"order_id": order_id, "cleaner_id": req.cleaner_id, "order": order_data}
     })
     
     # 清除緩存
@@ -313,6 +313,12 @@ async def update_order(
     await delete_pattern("orders:*")
     await delete_pattern("cleaner_orders:*")
     
+    # 廣播訂單更新
+    await manager.broadcast("orders", {
+        "type": "order_updated",
+        "data": serialize_order(order)
+    })
+    
     return success_response(data=serialize_order(order))
 
 
@@ -338,8 +344,10 @@ async def websocket_orders(websocket: WebSocket):
     await manager.connect(websocket, "orders")
     try:
         while True:
-            # 保持連接，等待廣播
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            # 心跳/ping 回應
+            if data == "ping" or data == '{"type":"ping"}':
+                await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(websocket, "orders")
 
