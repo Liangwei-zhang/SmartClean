@@ -13,7 +13,8 @@
 - [x] Asyncpg 異步驅動
 - [x] PgBouncer 連接池
 - [x] 樂觀鎖 (version)
-- [ ] PostGIS 空間索引
+- [x] PostGIS 空間索引 (GIST) ✅ 2026-03-06
+- [x] Redis GEO 毫秒級查詢 ✅ 2026-03-06
 
 ### 第三階段：快取通訊
 - [x] 兩級快取 (L1+L2)

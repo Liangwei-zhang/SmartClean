@@ -3,16 +3,23 @@ SmartClean - 核彈級優化版清潔服務平台
 """
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+
+# 減少 SQLAlchemy 日誌噪音
+logging.getLogger("sqlalchemy.engine.Engine").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.response import ORJSONResponse
 from app.core.websocket import get_redis
+from app.core.monitoring import log_request, Metrics, logger
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -46,6 +53,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 請求監控 Middleware
+@app.middleware("http")
+async def monitor_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    
+    # 記錄請求
+    log_request(
+        endpoint=request.url.path,
+        duration=duration,
+        status=response.status_code,
+        method=request.method
+    )
+    
+    return response
 
 
 # 靜態文件
@@ -103,7 +127,7 @@ async def health():
 
 
 # API 路由
-from app.api import orders, auth, hosts, properties, cleaners, order_status, upload, notifications, stats, geocode
+from app.api import orders, auth, hosts, properties, cleaners, order_status, upload, notifications, stats, geocode, geo_search
 
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
@@ -113,9 +137,26 @@ app.include_router(order_status.router, prefix="/api/orders", tags=["Order Statu
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(stats.router, prefix="/api/stats", tags=["Stats"])
-
-# WebSocket
-from app.api.orders import websocket_orders
-app.add_api_websocket_route("/api/orders/ws/orders", websocket_orders)
 app.include_router(geocode.router, prefix="/api", tags=["Geocode"])
+app.include_router(geo_search.router, prefix="/api/geo", tags=["Geo Search"])
 app.include_router(hosts.router, prefix="/api/hosts", tags=["Hosts"])
+
+
+# === 監控端點 ===
+from app.core.monitoring import Metrics, log_event
+
+@app.get("/api/monitoring/stats")
+async def get_stats():
+    """獲取監控統計"""
+    return Metrics.get_stats()
+
+@app.post("/api/monitoring/reset")
+async def reset_stats():
+    """重置統計數據"""
+    Metrics.reset()
+    return {"message": "Stats reset"}
+
+@app.get("/api/health")
+async def health_check():
+    """健康檢查"""
+    return {"status": "ok", "timestamp": time.time()}

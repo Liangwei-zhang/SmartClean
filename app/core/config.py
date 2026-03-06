@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     X_BEARER_TOKEN: str = "your_bearer_token_here"
     NICO_TELEGRAM_ID: str = ""
     
+    # S3 / Object Storage
+    S3_ENABLED: bool = False
+    S3_ENDPOINT_URL: str = ""  # e.g., https://s3.amazonaws.com or https://oss-cn-hangzhou.aliyuncs.com
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_BUCKET: str = "smartclean"
+    S3_REGION: str = "us-east-1"
+    S3_PUBLIC_URL: str = ""  # CDN URL if available
+    
     class Config:
         env_file = ".env"
         extra = "ignore"

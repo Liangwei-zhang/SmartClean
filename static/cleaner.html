@@ -1210,10 +1210,12 @@
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-                            () => resolve(null)
+                            // 如果拒絕授權，使用卡爾加里中心作為默認位置
+                            () => resolve({lat: 51.0447, lng: -114.0719})
                         );
                     } else {
-                        resolve(null);
+                        // 不支持 geolocation，使用默認位置
+                        resolve({lat: 51.0447, lng: -114.0719});
                     }
                 });
             }
@@ -1283,12 +1285,15 @@
                     // 異步計算距離，完成後排序並顯示
                     getUserLocation().then(async userLoc => {
                         if (userLoc) {
-                            // 等待所有地址解析完成
+                            // 直接使用 API 返回的坐標計算距離
                             await Promise.all(orders.map(async (o) => {
-                                const addr = o.property_address || o.property_name;
-                                if (addr) {
+                                // 優先使用 API 返回的坐標
+                                if (o.property_lat && o.property_lng) {
+                                    o.distance = calcDistance(userLoc.lat, userLoc.lng, o.property_lat, o.property_lng);
+                                } else if (o.property_address || o.property_name) {
+                                    // 迴退到地址解析
                                     try {
-                                        const loc = await geocodeAddress(addr);
+                                        const loc = await geocodeAddress(o.property_address || o.property_name);
                                         if (loc) {
                                             o.distance = calcDistance(userLoc.lat, userLoc.lng, loc.lat, loc.lng);
                                         }

@@ -93,6 +93,8 @@ class Order(SQLModel, table=True):
     __table_args__ = (
         Index('idx_order_status', 'status'),
         Index('idx_order_cleaner', 'cleaner_id'),
+        Index('idx_order_status_created', 'status', 'created_at'),
+        Index('idx_order_property', 'property_id'),
     )
 
 

@@ -1,5 +1,5 @@
 """
-圖片上傳 API
+圖片上傳 API - 支持本地存儲和 S3
 """
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -15,6 +15,13 @@ from app.core.database import get_db
 from app.core.response import success_response
 from app.core.config import get_settings
 from app.models.models import Order
+
+# S3 上傳 (條件導入)
+try:
+    from app.core.s3 import upload_to_s3, generate_s3_key, settings as s3_settings
+    S3_ENABLED = s3_settings.S3_ENABLED
+except ImportError:
+    S3_ENABLED = False
 
 router = APIRouter()
 settings = get_settings()
@@ -56,7 +63,7 @@ async def upload_image(
     order_id: int = None,
     db: AsyncSession = Depends(get_db)
 ):
-    """上傳圖片"""
+    """上傳圖片 (支持 S3 和本地存儲)"""
     # 驗證文件類型
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="只能上傳圖片文件")
@@ -71,16 +78,21 @@ async def upload_image(
     # 壓縮圖片 (使用線程池避免阻塞事件循環)
     compressed = await asyncio.to_thread(compress_image, file_bytes)
     
-    # 生成唯一文件名
-    ext = ".jpg"
-    filename = f"{uuid.uuid4()}{ext}"
-    filepath = IMAGES_DIR / filename
-    
-    # 保存
-    with open(filepath, "wb") as f:
-        f.write(compressed)
-    
-    url = f"/uploads/images/{filename}"
+    # 根據配置選擇存儲方式
+    if S3_ENABLED:
+        # S3 存儲
+        s3_key, content_type = generate_s3_key(file.filename or "image.jpg", "images")
+        url = await upload_to_s3(compressed, s3_key, content_type)
+    else:
+        # 本地存儲 (向後兼容)
+        ext = ".jpg"
+        filename = f"{uuid.uuid4()}{ext}"
+        filepath = IMAGES_DIR / filename
+        
+        with open(filepath, "wb") as f:
+            f.write(compressed)
+        
+        url = f"/uploads/images/{filename}"
     
     # 如果有 order_id，更新訂單
     if order_id:
@@ -96,7 +108,7 @@ async def upload_image(
             order.completion_photos = json.dumps(existing)
             await db.commit()
     
-    return success_response(data={"url": url}, message="上傳成功")
+    return success_response(data={"url": url, "storage": "s3" if S3_ENABLED else "local"}, message="上傳成功")
 
 
 @router.post("/voice")
