@@ -1207,15 +1207,29 @@
             // 獲取用戶位置
             function getUserLocation() {
                 return new Promise((resolve) => {
+                    // 直接返回默認位置，不等待 geolocation (避免阻塞)
+                    const defaultLoc = {lat: 51.0447, lng: -114.0719};
+                    let resolved = false;
+                    
+                    const resolveOnce = (loc) => {
+                        if (!resolved) {
+                            resolved = true;
+                            resolve(loc);
+                        }
+                    };
+                    
                     if (navigator.geolocation) {
+                        // 使用較短的超時時間
                         navigator.geolocation.getCurrentPosition(
-                            (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-                            // 如果拒絕授權，使用卡爾加里中心作為默認位置
-                            () => resolve({lat: 51.0447, lng: -114.0719})
+                            (pos) => resolveOnce({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+                            // 如果拒絕授權或超時，使用默認位置
+                            () => resolveOnce(defaultLoc),
+                            {timeout: 3000, maximumAge: 60000}
                         );
+                        // 3秒後自動 resolve 默認位置 (作為備份)
+                        setTimeout(() => resolveOnce(defaultLoc), 3000);
                     } else {
-                        // 不支持 geolocation，使用默認位置
-                        resolve({lat: 51.0447, lng: -114.0719});
+                        resolveOnce(defaultLoc);
                     }
                 });
             }
@@ -1282,82 +1296,94 @@
                             !o.cleaner_id
                     );
 
-                    // 異步計算距離，完成後排序並顯示
+                    // 異步計算距離，但不要阻斷顯示
                     getUserLocation().then(async userLoc => {
                         if (userLoc) {
-                            // 直接使用 API 返回的坐標計算距離
-                            await Promise.all(orders.map(async (o) => {
-                                // 優先使用 API 返回的坐標
+                            // 直接使用 API 返回的坐標計算距離 (同步計算，不需要 await)
+                            for (const o of orders) {
                                 if (o.property_lat && o.property_lng) {
                                     o.distance = calcDistance(userLoc.lat, userLoc.lng, o.property_lat, o.property_lng);
-                                } else if (o.property_address || o.property_name) {
-                                    // 迴退到地址解析
-                                    try {
-                                        const loc = await geocodeAddress(o.property_address || o.property_name);
-                                        if (loc) {
-                                            o.distance = calcDistance(userLoc.lat, userLoc.lng, loc.lat, loc.lng);
-                                        }
-                                    } catch(e) {}
                                 }
-                            }));
-                        }
-
-                        // 排序
-                        const sortType = currentSort.type;
-                        const desc = currentSort.desc;
-                        orders.sort((a, b) => {
-                            if (sortType === "price") {
-                                const priceA = Number(a.price) || 0;
-                                const priceB = Number(b.price) || 0;
-                                return desc ? priceB - priceA : priceA - priceB;
-                            } else if (sortType === "distance") {
-                                const distA = Number(a.distance) || 999999;
-                                const distB = Number(b.distance) || 999999;
-                                return desc ? distB - distA : distA - distB;
-                            } else {
-                                // 時間排序 - created_at
-                                const timeA = a.checkout_time || "";
-                                const timeB = b.checkout_time || "";
-                                return desc ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
                             }
-                        });
-
-                        const list = document.getElementById("openOrdersList");
-                        if (orders.length === 0) {
-                            list.innerHTML =
-                                '<div class="empty-state"><span class="empty-icon">📥</span>目前沒有新任務</div>';
-                            hideLoading();
-                            return;
                         }
+                        
+                        // 排序 (不阻塞 UI)
+                        setTimeout(() => {
+                            renderOrders(orders);
+                            hideLoading();
+                        }, 0);
+                    });
+                    
+                    // 如果 3 秒內沒有定位結果，直接渲染 (不等待)
+                    setTimeout(() => {
+                        if (document.getElementById('openOrdersList').innerHTML === '') {
+                            renderOrders(orders);
+                            hideLoading();
+                        }
+                    }, 3000);
 
-                        list.innerHTML = orders
-                        .reverse()
-                        .map(
-                            (o) => `
-                <div class="card">
-                    <div class="card-header">
-                        <div class="prop-name">${e(o.property_name) || "未命名房源"}</div>
-                        <div class="price">$${o.price}</div>
-                    </div>
-                    <div class="info-row">📍 ${shortAddr(o)}</div>
-                    ${o.distance !== undefined ? `<div class="info-row">📏 距離: ${o.distance.toFixed(1)} km</div>` : ''}
-                    <div class="info-row">🕐 退房時間: ${formatTime(o.checkout_time)}</div>
-                    ${
-                        o.text_notes
-                            ? `
-                        <div class="info-row" style="background:var(--bg-light);padding:10px;border-radius:8px;margin:8px 0;">
-                            <span style="font-size:12px;color:var(--text-muted);">📝 備註：</span>
-                            <div style="font-weight:600;margin-top:4px;">${e(o.text_notes)}</div>
-                        </div>
-                    `
-                            : ""
-                    }
-                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shortAddr(o))}" class="map-link" target="_blank">↗️ 查看導航地圖</a>
-                    <button class="btn-grab" onclick="acceptOrder(${o.id})">✋ 立即搶單</button>
-                </div>`,
-                        )
-                        .join("");
+                } catch (e) {
+                    console.error('loadOpenOrders error:', e);
                     hideLoading();
+                }
+            }
+            
+            function renderOrders(orders) {
+                // 排序邏輯
+                const sortType = currentSort.type;
+                const desc = currentSort.desc;
+                orders.sort((a, b) => {
+                    if (sortType === "price") {
+                        const priceA = Number(a.price) || 0;
+                        const priceB = Number(b.price) || 0;
+                        return desc ? priceB - priceA : priceA - priceB;
+                    } else if (sortType === "distance") {
+                        const distA = Number(a.distance) || 999999;
+                        const distB = Number(b.distance) || 999999;
+                        return desc ? distB - distA : distA - distB;
+                    } else {
+                        const timeA = a.checkout_time || "";
+                        const timeB = b.checkout_time || "";
+                        return desc ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                    }
+                });
+
+                const list = document.getElementById("openOrdersList");
+                if (!list) return;
+                
+                if (orders.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><span class="empty-icon">📥</span>目前沒有新任務</div>';
+                    return;
+                }
+
+                list.innerHTML = orders
+                .reverse()
+                .map(
+                    (o) => `
+        <div class="card">
+            <div class="card-header">
+                <div class="prop-name">${e(o.property_name) || "未命名房源"}</div>
+                <div class="price">$${o.price}</div>
+            </div>
+            <div class="info-row">📍 ${shortAddr(o)}</div>
+            ${o.distance !== undefined ? `<div class="info-row">📏 距離: ${o.distance.toFixed(1)} km</div>` : ''}
+            <div class="info-row">🕐 退房時間: ${formatTime(o.checkout_time)}</div>
+            ${
+                o.text_notes
+                    ? `
+                <div class="info-row" style="background:var(--bg-light);padding:10px;border-radius:8px;margin:8px 0;">
+                    <span style="font-size:12px;color:var(--text-muted);">📝 備註：</span>
+                    <div style="font-weight:600;margin-top:4px;">${e(o.text_notes)}</div>
+                </div>
+    `
+                    : ""
+            }
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shortAddr(o))}" class="map-link" target="_blank">↗️ 查看導航地圖</a>
+            <button class="btn-grab" onclick="acceptOrder(${o.id})">✋ 立即搶單</button>
+        </div>`,
+                )
+                .join("");
+            }
                     }); // end getUserLocation().then()
                 } catch (e) {
                     hideLoading();
