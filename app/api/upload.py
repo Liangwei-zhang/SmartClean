@@ -1,6 +1,7 @@
 """
 圖片上傳 API
 """
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
@@ -28,8 +29,8 @@ MAX_IMAGE_SIZE = 1920  # 最大邊長
 QUALITY = 85
 
 
-async def compress_image(file_bytes: bytes) -> bytes:
-    """壓縮圖片"""
+def compress_image(file_bytes: bytes) -> bytes:
+    """壓縮圖片 (同步函數，會在線程池中執行)"""
     try:
         img = Image.open(io.BytesIO(file_bytes))
         
@@ -67,8 +68,8 @@ async def upload_image(
     if len(file_bytes) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="圖片大小不能超過 10MB")
     
-    # 壓縮圖片
-    compressed = await compress_image(file_bytes)
+    # 壓縮圖片 (使用線程池避免阻塞事件循環)
+    compressed = await asyncio.to_thread(compress_image, file_bytes)
     
     # 生成唯一文件名
     ext = ".jpg"

@@ -199,12 +199,14 @@ async def accept_order(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    搶單 - 樂觀鎖實現
-    防止並發 Race Condition
+    搶單 - 悲觀鎖實現
+    使用 SELECT FOR UPDATE SKIP LOCKED 防止並發 Race Condition
     """
-    # 1. 查詢訂單當前版本
+    # 1. 悲觀鎖查詢 + 鎖定訂單
     result = await db.execute(
-        select(Order).where(Order.id == order_id)
+        select(Order)
+        .where(Order.id == order_id)
+        .with_for_update(skip_locked=True)
     )
     order = result.scalar_one_or_none()
     
@@ -214,16 +216,12 @@ async def accept_order(
     if order.status != OrderStatus.OPEN:
         raise HTTPException(status_code=400, detail="訂單已被搶走")
     
-    # 2. 樂觀鎖更新
-    result = await db.execute(
-        update(Order)
-        .where(
-            Order.id == order_id,
-            Order.version == order.version,
-            Order.status == OrderStatus.OPEN
-        )
-        .values(
-            status=OrderStatus.ACCEPTED,
+    # 2. 更新訂單狀態
+    order.status = OrderStatus.ACCEPTED
+    order.cleaner_id = req.cleaner_id
+    order.cleaner_name = req.cleaner_name
+    order.assigned_at = func.now()
+    order.version += 1
             cleaner_id=req.cleaner_id,
             cleaner_name=req.cleaner_name,
             version=order.version + 1,
