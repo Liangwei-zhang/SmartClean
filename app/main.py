@@ -169,6 +169,9 @@ app.include_router(hosts.router, prefix="/api/hosts", tags=["Hosts"])
 
 # === 監控端點 ===
 from app.core.monitoring import Metrics, log_event
+from app.api.monitoring import router as monitoring_router
+
+app.include_router(monitoring_router, prefix="/api/monitoring", tags=["Monitoring"])
 
 @app.get("/api/monitoring/stats")
 async def get_stats():
