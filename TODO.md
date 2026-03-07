@@ -30,10 +30,13 @@
 
 ---
 
-## 🟠 P1 - 功能
+## 🟠 P1 - 可選優化
 
+- [ ] 增強監控 (Prometheus + Grafana)
+- [ ] PostGIS 索引優化 (buffering=on)
+- [ ] 壓測 (wrk/locust)
 - [ ] 通知系統 (短信/推送)
-- [ ] 支付集成 (Stripe/LinePay)
+- [ ] 支付集成
 - [ ] 評價系統
 
 ---
@@ -42,20 +45,14 @@
 
 - [ ] 訂單分表 (按月)
 - [ ] 讀寫分離
-- [ ] 移動端 PWA 適配
-- [ ] 客服系統集成
-- [ ] 自動化測試 CI/CD
-- [ ] OpenTelemetry 監控
+- [ ] PWA 適配
+- [ ] CI/CD
 
 ---
 
 ## 📋 快速命令
 
 ```bash
-# 啟動
 cd /home/nico/projects/SmartClean
 sudo ./run_optimized.sh
-
-# Docker 部署
-docker-compose -f docker-compose.prod.yml up -d
 ```

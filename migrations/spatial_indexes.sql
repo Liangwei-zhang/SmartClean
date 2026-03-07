@@ -52,3 +52,11 @@ AND status = 'online'
 ORDER BY distance_m
 LIMIT 10;
 */
+-- PostGIS GIST 索引優化 (buffering)
+-- 在大量更新坐標時開啟緩衝區
+ALTER INDEX idx_property_location_gist SET (fillfactor = 80);
+ALTER INDEX idx_cleaner_location_gist SET (fillfactor = 80);
+
+-- 定期維護 (vacuum analyze)
+VACUUM ANALYZE properties;
+VACUUM ANALYZE cleaners;
