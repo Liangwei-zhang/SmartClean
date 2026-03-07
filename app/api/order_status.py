@@ -64,14 +64,23 @@ async def update_order_status(
     )
     order = result.scalar_one()
     
+    # 安全序列化
+    try:
+        order_data = order.model_dump() if hasattr(order, 'model_dump') else dict(order.__dict__)
+        for k, v in order_data.items():
+            if hasattr(v, 'isoformat'):
+                order_data[k] = v.isoformat()
+    except Exception as e:
+        order_data = {"id": order.id, "status": str(order.status)}
+    
     # 廣播狀態更新
     from app.core.websocket import manager
     await manager.broadcast("orders", {
         "type": "status_update",
-        "data": order.model_dump()
+        "data": order_data
     })
     
-    return success_response(data=order.model_dump(), message="狀態更新成功")
+    return success_response(data=order_data, message="狀態更新成功")
 
 
 @router.post("/{order_id}/cancel")
