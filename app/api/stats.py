@@ -335,32 +335,29 @@ async def get_property_stats(
 ):
     """房源統計"""
     
+    # 简化查询 - 先获取所有房源
     result = await db.execute(
-        select(
-            Property.id,
-            Property.name,
-            Property.address,
-            func.count(Order.id).label('total_orders'),
-            func.sum(
-                func.case((Order.status == "COMPLETED", Order.price), else_=0)
-            ).label('total_revenue'),
-            func.avg(Order.price).label('avg_price')
-        )
-        .outerjoin(Order, Order.property_id == Property.id)
-        .group_by(Property.id, Property.name, Property.address)
-        .order_by(func.count(Order.id).desc())
+        select(Property.id, Property.name, Property.address)
+        .order_by(Property.id.desc())
         .limit(limit)
     )
     
     properties = []
     for r in result.fetchall():
+        prop_id, name, address = r[0], r[1], r[2]
+        
+        # 分别查询订单数
+        orders_result = await db.scalar(
+            select(func.count(Order.id)).where(Order.property_id == prop_id)
+        )
+        
         properties.append({
-            "id": r[0],
-            "name": r[1],
-            "address": r[2],
-            "total_orders": r[3] or 0,
-            "total_revenue": float(r[4] or 0),
-            "avg_price": float(r[5] or 0)
+            "id": prop_id,
+            "name": name,
+            "address": address,
+            "total_orders": orders_result or 0,
+            "total_revenue": 0,
+            "avg_price": 0
         })
     
     return success_response(data=properties)
