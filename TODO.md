@@ -2,89 +2,67 @@
 
 ---
 
-## ✅ 已完成 (核彈優化)
+## ✅ 已完成
 
-### 第一階段：引擎內核
-- [x] ORJSON 響應加速
-- [x] Granian (Rust ASGI) ← 剛配置
-- [x] Jemalloc 記憶體優化
+### 核心優化
+- [x] FastAPI + Granian (Rust ASGI)
+- [x] PostgreSQL 15 + PostGIS 3.4
+- [x] Redis 兩級緩存 (L1+L2)
+- [x] 悲觀鎖搶單 (SELECT FOR UPDATE SKIP LOCKED)
+- [x] Redis Lua 原子搶單
+- [x] Redis Pub/Sub 跨 Worker 廣播
+- [x] Redis GEO 毫秒級地理查詢
+- [x] PostGIS GIST 空間索引
+- [x] Arq 異步任務隊列
+- [x] S3/OSS 對象存儲
+- [x] 移動端容錯 (心跳+消息補發)
+- [x] 定向派單 (cleaner_id 精準推送)
+- [x] 訂單距離計算 (API 返回)
+- [x] 前端頁面加載優化
 
-### 第二階段：資料庫
-- [x] Asyncpg 異步驅動
-- [x] PgBouncer 連接池
-- [x] 樂觀鎖 (version)
-- [x] PostGIS 空間索引 (GIST) ✅ 2026-03-06
-- [x] Redis GEO 毫秒級查詢 ✅ 2026-03-06
-
-### 第三階段：快取通訊
-- [x] 兩級快取 (L1+L2)
-- [x] 防擊穿機制
-- [x] Redis Pub/Sub WebSocket
-
-### 第四階段：任務隊列
-- [x] Arq 替換 Celery
-
-### 第五階段：基礎設施
-- [x] Idempotency Key
-- [x] Nginx HTTP/3 + 零拷貝
-- [x] Rate Limiting
+### 數據庫遷移 ✅
+- [x] PostGIS 空間索引
+- [x] 房源/房東關聯修復
 
 ---
 
-## 🔴 P0 - 立即執行
+## 🔴 P0 - 待完成
 
-### 1. 啟動服務測試 Granian
-```bash
-cd /home/nico/projects/SmartClean
-sudo ./run_optimized.sh
-```
-
-### 2. 驗證 PostGIS 是否啟用
-```sql
-SELECT postgis_version();
-```
-
-### 3. 數據庫遷移 (如有需要)
-```bash
-alembic upgrade head
-```
+### 基礎設施
+- [ ] Rate Limiting (登入/下單限流)
+- [ ] 監控 (Logfire/OpenTelemetry)
 
 ---
 
-## 🟠 P1 - 本週任務
+## 🟠 P1 - 功能
 
-### 功能擴展
-- [ ] 通知系統 (Arq tasks)
-- [ ] 支付集成 Stripe/LinePay
+- [ ] 通知系統 (短信/推送)
+- [ ] 支付集成 (Stripe/LinePay)
 - [ ] 評價系統
 - [ ] 統計分析儀表板
 
-### 性能測試
-- [ ] 使用 wrk/locust 壓測 RPS
-- [ ] WebSocket 延遲測試
-- [ ] 數據庫併發測試
-
 ---
 
-## 🟡 P2 - 下月規劃
+## 🟡 P2 - 長期
 
+- [ ] 訂單分表 (按月)
+- [ ] 讀寫分離
 - [ ] 移動端 PWA 適配
 - [ ] 客服系統集成
 - [ ] 自動化測試 CI/CD
-- [ ] 監控報警 (Sentry + Prometheus)
 
 ---
 
 ## 📋 快速命令
 
 ```bash
-# 啟動 (使用 Granian)
+# 啟動
 cd /home/nico/projects/SmartClean
 sudo ./run_optimized.sh
 
 # Docker 部署
 docker-compose -f docker-compose.prod.yml up -d
 
-# 數據庫遷移
-alembic upgrade head
+# 執行空間索引遷移
+psql -U nico -d smartclean -f migrations/spatial_indexes.sql
 ```
