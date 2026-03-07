@@ -141,6 +141,11 @@ async def admin_html():
     return FileResponse("static/admin.html")
 
 
+@app.get("/stats")
+async def stats_page():
+    return FileResponse("static/stats.html")
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>統計儀表板 - SmartClean</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .header h1 { font-size: 24px; }
+        
+        .period-selector {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .period-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .period-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card {
+            position: relative;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .stat-value.primary { color: var(--primary); }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-value.danger { color: var(--danger); }
+        
+        .stat-change {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+        
+        .section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        tr:hover { background: var(--bg); }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge.online { background: #dcfce7; color: #166534; }
+        .badge.offline { background: #f1f5f9; color: #64748b; }
+        .badge.busy { background: #fef3c7; color: #92400e; }
+        
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            padding: 16px 0;
+        }
+        
+        .chart-bar {
+            flex: 1;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            transition: all 0.3s;
+        }
+        
+        .chart-bar:hover {
+            background: var(--success);
+        }
+        
+        .chart-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 4px;
+        }
+        
+        .chart-wrapper {
+            overflow-x: auto;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <a href="/admin" class="back-btn">← 返回管理</a>
+    
+    <div class="header">
+        <h1>📊 統計儀表板</h1>
+        <div class="period-selector">
+            <button class="period-btn" onclick="setPeriod(7)">7天</button>
+            <button class="period-btn active" onclick="setPeriod(30)">30天</button>
+            <button class="period-btn" onclick="setPeriod(90)">90天</button>
+        </div>
+    </div>
+    
+    <!-- 今日數據 -->
+    <div class="grid">
+        <div class="card stat-card">
+            <div class="stat-label">今日訂單</div>
+            <div class="stat-value primary" id="todayOrders">-</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">今日完成</div>
+            <div class="stat-value success" id="todayCompleted">-</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">今日營收</div>
+            <div class="stat-value" id="todayRevenue">-</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">在線清潔員</div>
+            <div class="stat-value warning" id="onlineCleaners">-</div>
+        </div>
+    </div>
+    
+    <!-- 彙總數據 -->
+    <div class="grid">
+        <div class="card stat-card">
+            <div class="stat-label">總訂單</div>
+            <div class="stat-value primary" id="totalOrders">-</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">總營收</div>
+            <div class="stat-value success" id="totalRevenue">-</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">平均訂單金額</div>
+            <div class="stat-value" id="avgOrderValue">-</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">房源數</div>
+            <div class="stat-value" id="totalProperties">-</div>
+        </div>
+    </div>
+    
+    <!-- 訂單趨勢圖 -->
+    <div class="section">
+        <div class="section-title">📈 訂單趨勢</div>
+        <div class="chart-wrapper">
+            <div class="chart-container" id="orderChart"></div>
+        </div>
+    </div>
+    
+    <!-- 清潔員排行 -->
+    <div class="section">
+        <div class="section-title">🏆 清潔員排行</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>姓名</th>
+                    <th>總任務</th>
+                    <th>接受數</th>
+                    <th>完成率</th>
+                    <th>評分</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody id="cleanerTable">
+                <tr><td colspan="7" class="loading">載入中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- 房源排行 -->
+    <div class="section">
+        <div class="section-title">🏠 房源排行</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>房源名稱</th>
+                    <th>訂單數</th>
+                    <th>總營收</th>
+                </tr>
+            </thead>
+            <tbody id="propertyTable">
+                <tr><td colspan="4" class="loading">載入中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        const API = '/api';
+        let currentPeriod = 30;
+        
+        async function fetchJSON(url) {
+            const res = await fetch(url);
+            const data = await res.json();
+            return data.data || data;
+        }
+        
+        function setPeriod(days) {
+            currentPeriod = days;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(days));
+            });
+            loadDashboard();
+        }
+        
+        async function loadDashboard() {
+            try {
+                // 加載儀表板數據
+                const [dashboard, stats, cleaners, properties] = await Promise.all([
+                    fetchJSON(`${API}/stats/dashboard?days=${currentPeriod}`),
+                    fetchJSON(`${API}/stats`),
+                    fetchJSON(`${API}/stats/cleaners`),
+                    fetchJSON(`${API}/stats/properties`)
+                ]);
+                
+                // 今日數據
+                document.getElementById('todayOrders').textContent = dashboard.today.orders;
+                document.getElementById('todayCompleted').textContent = dashboard.today.completed;
+                document.getElementById('todayRevenue').textContent = '$' + dashboard.today.revenue.toFixed(0);
+                document.getElementById('onlineCleaners').textContent = stats.cleaners.online;
+                
+                // 彙總數據
+                document.getElementById('totalOrders').textContent = dashboard.summary.total_orders;
+                document.getElementById('totalRevenue').textContent = '$' + dashboard.summary.total_revenue.toFixed(0);
+                document.getElementById('avgOrderValue').textContent = '$' + dashboard.summary.avg_order_value;
+                document.getElementById('totalProperties').textContent = stats.properties;
+                
+                // 訂單趨勢圖
+                renderOrderChart(dashboard.order_trend);
+                
+                // 清潔員排行
+                renderCleanerTable(cleaners);
+                
+                // 房源排行
+                renderPropertyTable(properties);
+                
+            } catch (e) {
+                console.error('載入失敗:', e);
+            }
+        }
+        
+        function renderOrderChart(data) {
+            const container = document.getElementById('orderChart');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="empty">暫無數據</div>';
+                return;
+            }
+            
+            const maxCount = Math.max(...data.map(d => d.count));
+            const recent7 = data.slice(-14); // 顯示最近14天
+            
+            container.innerHTML = recent7.map(d => {
+                const height = (d.count / maxCount * 100).toFixed(1);
+                const date = new Date(d.date);
+                const label = `${date.getMonth() + 1}/${date.getDate()}`;
+                return `
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+                        <div class="chart-bar" style="height:${height}%" title="${d.count}單"></div>
+                        <div class="chart-label">${label}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderCleanerTable(data) {
+            const tbody = document.getElementById('cleanerTable');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty">暫無數據</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.slice(0, 10).map((c, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${c.name || '-'}</td>
+                    <td>${c.total_jobs}</td>
+                    <td>${c.accepted_jobs}</td>
+                    <td>${c.completion_rate}%</td>
+                    <td>⭐ ${c.rating.toFixed(1)}</td>
+                    <td><span class="badge ${c.status}">${c.status}</span></td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderPropertyTable(data) {
+            const tbody = document.getElementById('propertyTable');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty">暫無數據</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.slice(0, 10).map((p, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${p.name || '-'}</td>
+                    <td>${p.total_orders}</td>
+                    <td>$${p.total_revenue.toFixed(0)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // 初始化
+        loadDashboard();
+        
+        // 每分鐘刷新
+        setInterval(loadDashboard, 60000);
+    </script>
+</body>
+</html>
