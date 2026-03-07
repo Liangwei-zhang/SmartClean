@@ -22,6 +22,7 @@
 - [x] Rate Limiting (登入 10次/分, API 60次/分)
 - [x] 監控系統 (/api/monitoring/stats)
 - [x] 訂單狀態更新 Bug 修復
+- [x] 統計分析儀表板 (/stats)
 
 ### 數據庫遷移 ✅
 - [x] PostGIS 空間索引
@@ -34,7 +35,6 @@
 - [ ] 通知系統 (短信/推送)
 - [ ] 支付集成 (Stripe/LinePay)
 - [ ] 評價系統
-- [ ] 統計分析儀表板
 
 ---
 
