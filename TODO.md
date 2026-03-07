@@ -19,18 +19,13 @@
 - [x] 定向派單 (cleaner_id 精準推送)
 - [x] 訂單距離計算 (API 返回)
 - [x] 前端頁面加載優化
+- [x] Rate Limiting (登入 10次/分, API 60次/分)
+- [x] 監控系統 (/api/monitoring/stats)
+- [x] 訂單狀態更新 Bug 修復
 
 ### 數據庫遷移 ✅
 - [x] PostGIS 空間索引
 - [x] 房源/房東關聯修復
-
----
-
-## 🔴 P0 - 待完成
-
-### 基礎設施
-- [ ] Rate Limiting (登入/下單限流)
-- [ ] 監控 (Logfire/OpenTelemetry)
 
 ---
 
@@ -50,6 +45,7 @@
 - [ ] 移動端 PWA 適配
 - [ ] 客服系統集成
 - [ ] 自動化測試 CI/CD
+- [ ] OpenTelemetry 監控
 
 ---
 
@@ -62,7 +58,4 @@ sudo ./run_optimized.sh
 
 # Docker 部署
 docker-compose -f docker-compose.prod.yml up -d
-
-# 執行空間索引遷移
-psql -U nico -d smartclean -f migrations/spatial_indexes.sql
 ```
