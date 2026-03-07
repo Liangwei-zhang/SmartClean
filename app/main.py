@@ -69,8 +69,8 @@ async def monitor_requests(request: Request, call_next):
     # 檢查速率限制 (對於敏感 API)
     sensitive_paths = ["/api/auth/login", "/api/orders", "/api/upload"]
     if any(request.url.path.startswith(p) for p in sensitive_paths):
-        # 登入/上傳更嚴格
-        limit = 10 if "/auth/login" in request.url.path else 60
+        # 登入/上傳更嚴格，但允許更高頻率
+        limit = 100 if "/auth/login" in request.url.path else 2000
         if not await check_rate_limit(request, limit=limit):
             return JSONResponse(
                 status_code=429,
