@@ -55,8 +55,28 @@ app.add_middleware(
 )
 
 # 請求監控 Middleware
+from app.core.rate_limit import check_rate_limit, check_blacklist
+
 @app.middleware("http")
 async def monitor_requests(request: Request, call_next):
+    # 檢查黑名單
+    if await check_blacklist(request):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Access denied"}
+        )
+    
+    # 檢查速率限制 (對於敏感 API)
+    sensitive_paths = ["/api/auth/login", "/api/orders", "/api/upload"]
+    if any(request.url.path.startswith(p) for p in sensitive_paths):
+        # 登入/上傳更嚴格
+        limit = 10 if "/auth/login" in request.url.path else 60
+        if not await check_rate_limit(request, limit=limit):
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "請求過於頻繁，請稍後再試"}
+            )
+    
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time
