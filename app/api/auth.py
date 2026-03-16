@@ -1,17 +1,22 @@
 """
 認證 API
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
+from typing import Optional
+import bcrypt
 
 from app.core.config import get_settings
+from app.core.websocket import get_redis
+
 async def generate_unique_code(db: AsyncSession, user_type: str) -> str:
     """生成唯一邀請碼"""
+    import random
+    import string
     chars = string.ascii_uppercase + string.digits
     while True:
         code = ''.join(random.choices(chars, k=8))
@@ -23,6 +28,38 @@ async def generate_unique_code(db: AsyncSession, user_type: str) -> str:
         if not result.scalar_one_or_none():
             return code
 
+
+async def is_token_revoked(token: str) -> bool:
+    """檢查 Token 是否已被撤銷"""
+    r = await get_redis()
+    if r:
+        try:
+            revoked = await r.get(f"token_revoked:{token}")
+            return revoked is not None
+        except:
+            pass
+    return False
+
+
+async def revoke_token(token: str) -> bool:
+    """撤銷 Token (加入黑名單)"""
+    r = await get_redis()
+    if r:
+        try:
+            # 解析 token 獲取過期時間
+            try:
+                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+                exp = payload.get("exp", 0)
+                ttl = max(exp - int(datetime.utcnow().timestamp()), 60)
+            except:
+                ttl = 60 * 24 * 7  # 默認7天
+            
+            await r.setex(f"token_revoked:{token}", ttl, "1")
+            return True
+        except:
+            pass
+    return False
+
 from app.core.database import get_db
 from app.core.response import success_response, error_response
 from app.models.models import Cleaner, User
@@ -30,11 +67,21 @@ from pydantic import BaseModel
 
 router = APIRouter()
 settings = get_settings()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
+# 直接使用 bcrypt 避免 passlib 兼容性問題
+import bcrypt
 
-# --- Schema ---
+def verify_password(plain: str, hashed: str) -> bool:
+    # bcrypt 限制 72 字符
+    try:
+        return bcrypt.checkpw(plain[:72].encode(), hashed.encode())
+    except:
+        return False
+
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password[:72].encode(), bcrypt.gensalt()).decode()
+
 class LoginRequest(BaseModel):
     phone: str
     password: str
@@ -58,12 +105,15 @@ def create_access_token(data: dict) -> str:
 
 def verify_password(plain: str, hashed: str) -> bool:
     # bcrypt 限制 72 字符
-    return pwd_context.verify(plain[:72], hashed)
+    try:
+        return bcrypt.checkpw(plain[:72].encode(), hashed.encode())
+    except:
+        return False
 
 
 def get_password_hash(password: str) -> str:
     # bcrypt 限制 72 字符
-    return pwd_context.hash(password[:72])
+    return bcrypt.hashpw(password[:72].encode(), bcrypt.gensalt()).decode()
 
 
 @router.post("/login")
@@ -99,6 +149,23 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         "user_type": req.user_type,
         "name": user.name
     })
+
+
+@router.post("/logout")
+async def logout(authorization: Optional[str] = Header(None)):
+    """登出 (撤銷 Token)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="缺少認證信息")
+    
+    token = authorization.replace("Bearer ", "")
+    
+    # 撤銷 token
+    revoked = await revoke_token(token)
+    
+    if revoked:
+        return success_response(message="登出成功")
+    else:
+        return success_response(message="Token 已失效")
 
 
 @router.post("/register")

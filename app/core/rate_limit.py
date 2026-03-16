@@ -1,17 +1,16 @@
 """
-速率限制 - 防止 API 濫用 (優化版)
+速率限制 - 防止 API 濫用 (Redis版)
 """
 import time
 from fastapi import Request, HTTPException
 from collections import defaultdict
-import threading
+import asyncio
 
 from app.core.websocket import get_redis
 
-
-# 內存限流 (快速攔截)
+# 內存限流 (快速攔截 + Redis 持久化)
 memory_limits = defaultdict(list)
-lock = threading.Lock()
+lock = asyncio.Lock()
 LIMIT_WINDOW = 60  # 60秒窗口
 DEFAULT_LIMIT = 1000  # 默認每分鐘1000次 (壓測友好)
 
@@ -27,7 +26,7 @@ async def check_rate_limit(
     limit: int = DEFAULT_LIMIT
 ) -> bool:
     """
-    檢查速率限制
+    檢查速率限制 (內存 + Redis 雙層)
     返回 True = 允許訪問
     返回 False = 超過限制
     """
@@ -36,25 +35,46 @@ async def check_rate_limit(
         key = request.client.host if request.client else "unknown"
     
     now = time.time()
+    r = await get_redis()
     
-    # 內存快速檢查 (線程安全)
-    with lock:
+    # Redis 檢查 (跨實例共享)
+    if r:
+        redis_key = f"rate_limit:{key}"
+        try:
+            current = await r.get(redis_key)
+            if current and int(current) >= limit:
+                # 記錄違規
+                await r.incr(f"rate_limit:violation:{key}")
+                return False
+        except:
+            pass
+    
+    # 內存快速檢查 (異步線程安全)
+    async with lock:
         client_times = memory_limits.get(key, [])
         # 清理過期的
         client_times = _cleanup_expired(client_times, now)
         
         if len(client_times) >= limit:
             # Redis 記錄違規 (異步，不阻塞)
-            try:
-                r = await get_redis()
-                if r:
-                    await r.incr(f"rate_limit:violation:{key}")
-            except:
-                pass
+            if r:
+                try:
+                    await r.incr(redis_key)
+                    await r.expire(redis_key, LIMIT_WINDOW)
+                except:
+                    pass
             return False
         
         client_times.append(now)
         memory_limits[key] = client_times
+    
+    # 更新 Redis 計數
+    if r:
+        try:
+            await r.incr(redis_key)
+            await r.expire(redis_key, LIMIT_WINDOW)
+        except:
+            pass
     
     return True
 

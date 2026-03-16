@@ -28,17 +28,22 @@ class CleanerStatusUpdate(BaseModel):
 async def create_cleaner(
     name: str = Body(None),
     phone: str = Body(None),
+    password: str = Body(None),  # 密碼必填
     db: AsyncSession = Depends(get_db)
 ):
     """新增清潔工"""
     import random
     import string
-    from passlib.hash import bcrypt
+    import bcrypt
+    
+    if not password:
+        raise HTTPException(status_code=400, detail="密碼必填")
+    
     chars = string.ascii_uppercase + string.digits
     code = ''.join(random.choices(chars, k=6))
     
-    # 臨時使用簡單哈希
-    password_hash = f"temp_{code}"
+    # 密碼正確哈希存儲 (使用 bcrypt 直接)
+    password_hash = bcrypt.hashpw(password[:72].encode(), bcrypt.gensalt()).decode()
     cleaner = Cleaner(name=name, phone=phone, code=code, password_hash=password_hash)
     db.add(cleaner)
     await db.commit()

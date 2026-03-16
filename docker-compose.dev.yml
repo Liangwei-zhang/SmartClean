@@ -26,6 +26,9 @@ services:
     container_name: smartclean_pgbouncer
     environment:
       DATABASE: smartclean
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 200
       DEFAULT_POOL_SIZE: 25

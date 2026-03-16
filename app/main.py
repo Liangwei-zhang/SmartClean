@@ -46,11 +46,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS 配置 - 限制域名
+cors_origins = ["http://localhost:3000", "http://localhost:8080"]
+if settings.CORS_ORIGINS:
+    cors_origins.extend([o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

@@ -66,19 +66,24 @@ async def get_host(host_id: int, db: AsyncSession = Depends(get_db)):
 async def create_host(
     name: str = Body(None),
     phone: str = Body(None),
+    password: str = Body(None),  # 密碼必填
     db: AsyncSession = Depends(get_db)
 ):
     """新增房東"""
+    import bcrypt
+    
     if not name or not phone:
         raise HTTPException(status_code=400, detail="名稱和電話必填")
+    if not password:
+        raise HTTPException(status_code=400, detail="密碼必填")
     
     import random
     import string
     chars = string.ascii_uppercase + string.digits
     code = ''.join(random.choices(chars, k=6))
     
-    # 臨時使用簡單哈希
-    password_hash = f"temp_{code}"
+    # 密碼正確哈希存儲 (使用 bcrypt 直接)
+    password_hash = bcrypt.hashpw(password[:72].encode(), bcrypt.gensalt()).decode()
     user = User(name=name, phone=phone, code=code, password_hash=password_hash)
     db.add(user)
     await db.commit()

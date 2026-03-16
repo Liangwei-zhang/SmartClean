@@ -6,26 +6,33 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "SmartClean"
-    DEBUG: bool = True
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
     
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/smartclean")
     DATABASE_URL_SYNC: str = os.getenv("DATABASE_URL_SYNC", "postgresql://postgres:postgres@localhost:5432/smartclean")
     
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
-    # JWT
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    # JWT - 必須從環境變量讀取
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+    if not SECRET_KEY:
+        import secrets as _secrets_module
+        SECRET_KEY = _secrets_module.token_hex(32)
+        print(f"⚠️ WARNING: Using auto-generated SECRET_KEY. Set SECRET_KEY env var for production!")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))  # 7 days default
+    
+    # CORS - 限制域名
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "")  # 逗號分隔的域名列表
     
     # Upload
-    UPLOAD_DIR: str = "uploads"
-    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "uploads")
+    MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", str(10 * 1024 * 1024)))  # 10MB
     
     # Custom
-    X_BEARER_TOKEN: str = "your_bearer_token_here"
+    X_BEARER_TOKEN: str = os.getenv("X_BEARER_TOKEN", "")
     NICO_TELEGRAM_ID: str = ""
     
     # S3 / Object Storage

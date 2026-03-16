@@ -26,6 +26,41 @@ except ImportError:
 router = APIRouter()
 settings = get_settings()
 
+# 允許的檔案類型
+ALLOWED_IMAGE_TYPES = {"jpeg", "jpg", "png", "gif", "webp"}
+ALLOWED_VOICE_TYPES = {"m4a", "mp3", "ogg", "wav", "webm"}
+
+# 惡意檔案類型 (禁止上傳)
+BLOCKED_EXTENSIONS = {
+    "exe", "sh", "bat", "cmd", "ps1", "bash", "elf",
+    "html", "htm", "js", "php", "asp", "jsp", "cgi",
+    "sql", "sqlite", "db",
+    "zip", "rar", "7z", "tar", "gz",
+    "pdf", "doc", "docx", "xls", "xlsx"
+}
+
+# 魔數 (檔案頭) 驗證
+IMAGE_MAGIC = {
+    b"\xff\xd8\xff": "jpeg",
+    b"\x89PNG": "png",
+    b"GIF87a": "gif",
+    b"GIF89a": "gif",
+    b"RIFF": "webp",  # WebP starts with RIFF
+}
+
+def validate_file_extension(filename: str, allowed_types: set) -> bool:
+    """驗證檔案副檔名"""
+    import os
+    ext = os.path.splitext(filename)[1].lower().lstrip(".")
+    return ext in allowed_types
+
+def validate_file_magic(file_bytes: bytes) -> str:
+    """驗證檔案魔數 (檔案頭)"""
+    for magic, file_type in IMAGE_MAGIC.items():
+        if file_bytes.startswith(magic):
+            return file_type
+    return None
+
 # 確保上傳目錄存在
 UPLOAD_DIR = Path(settings.UPLOAD_DIR)
 IMAGES_DIR = UPLOAD_DIR / "images"
@@ -64,16 +99,30 @@ async def upload_image(
     db: AsyncSession = Depends(get_db)
 ):
     """上傳圖片 (支持 S3 和本地存儲)"""
-    # 驗證文件類型
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="只能上傳圖片文件")
+    import os
     
-    # 讀取文件
+    # 驗證檔案類型
+    ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
+    
+    # 檢查是否為禁止的副檔名
+    if ext in BLOCKED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="不允許上傳此類型檔案")
+    
+    # 檢查是否為允許的圖片類型
+    if not validate_file_extension(file.filename or "image.jpg", ALLOWED_IMAGE_TYPES):
+        raise HTTPException(status_code=400, detail="只允許上傳 jpg, png, gif, webp 格式")
+    
+    # 讀取檔案
     file_bytes = await file.read()
     
     # 大小限制 (10MB)
     if len(file_bytes) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="圖片大小不能超過 10MB")
+    
+    # 魔數驗證
+    detected_type = validate_file_magic(file_bytes)
+    if not detected_type or detected_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="檔案格式無效或已損壞")
     
     # 壓縮圖片 (使用線程池避免阻塞事件循環)
     compressed = await asyncio.to_thread(compress_image, file_bytes)
@@ -117,8 +166,17 @@ async def upload_voice(
     db: AsyncSession = Depends(get_db)
 ):
     """上傳語音備註"""
-    if not file.content_type.startswith("audio/"):
-        raise HTTPException(status_code=400, detail="只能上傳音頻文件")
+    import os
+    
+    # 驗證檔案類型
+    ext = os.path.splitext(file.filename or "")[1].lower().lstrip(".")
+    
+    # 檢查是否為禁止的副檔名
+    if ext in BLOCKED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="不允許上傳此類型檔案")
+    
+    if not validate_file_extension(file.filename or "voice.m4a", ALLOWED_VOICE_TYPES):
+        raise HTTPException(status_code=400, detail="只允許上傳 m4a, mp3, ogg, wav, webm 格式")
     
     file_bytes = await file.read()
     
