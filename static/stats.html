@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f4f8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b5bdb'/><text y='24' x='4' font-size='22'>&#128202;</text></svg>">
+<title>數據統計 – SmartClean</title>
+<style>
+
+/* SmartClean 2025 — Bold, Dark-Capable Design System */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,'Inter',system-ui,sans-serif;background:#f4f4f8;color:#111118;-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100svh}
+
+/* ── Loading ── */
+#_ov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,10,18,.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:14px}
+._sp{width:38px;height:38px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:_s .7s linear infinite}
+@keyframes _s{to{transform:rotate(360deg)}}
+#_ov span{color:#fff;font-size:14px;font-weight:600}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(12px);background:#111118;color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.18);opacity:0;transition:.3s cubic-bezier(.2,1,.3,1);z-index:9998;white-space:nowrap;pointer-events:none;border:1px solid rgba(255,255,255,.08)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:#b91c1c}
+.toast.success{background:#166534}
+
+/* ── Header ── */
+.hdr{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top)+12px) 18px 12px;background:rgba(244,244,248,.9);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border-bottom:1px solid rgba(0,0,0,.07)}
+.hdr-title{font-size:17px;font-weight:700;letter-spacing:-.025em}
+.hdr-btn{padding:7px 15px;border-radius:999px;border:1.5px solid rgba(0,0,0,.1);background:#fff;font-size:13px;font-weight:600;color:#444;cursor:pointer;transition:.15s;font-family:inherit}
+.hdr-btn:active{background:#f0f0f4}
+
+/* ── Cards ── */
+.card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.05)}
+.card+.card{margin-top:10px}
+
+/* ── Stats ── */
+.stats{display:grid;gap:10px;padding:14px 16px 0}
+.stat{background:#fff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.05);cursor:default}
+.stat-n{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.stat-l{font-size:11px;font-weight:600;color:#888;margin-top:5px;text-transform:uppercase;letter-spacing:.03em}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-open{background:#fff7ed;color:#c2410c}.b-open::before{background:#f97316}
+.b-accepted{background:#eff6ff;color:#1d4ed8}.b-accepted::before{background:#3b82f6}
+.b-arrived{background:#fdf4ff;color:#7e22ce}.b-arrived::before{background:#a855f7}
+.b-completed{background:#f0fdf4;color:#15803d}.b-completed::before{background:#22c55e}
+.b-cancelled{background:#f9fafb;color:#6b7280}.b-cancelled::before{background:#9ca3af}
+.b-verified{background:#ecfdf5;color:#065f46}.b-verified::before{background:#10b981}
+
+/* ── Inputs ── */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#888;margin-bottom:7px}
+.input{width:100%;padding:13px 15px;background:#f4f4f8;border:1.5px solid transparent;border-radius:13px;font-size:15px;font-weight:500;color:#111118;outline:none;transition:.15s;font-family:inherit}
+.input::placeholder{color:#aaa}
+.input:focus{background:#fff;border-color:#3b5bdb;box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+textarea.input{resize:none;line-height:1.5}
+select.input{cursor:pointer}
+
+/* ── Buttons ── */
+.btn{width:100%;padding:15px;border-radius:16px;font-size:15px;font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-primary{background:#111118;color:#fff}
+.btn-blue{background:#3b5bdb;color:#fff}
+.btn-ghost{background:transparent;color:#888;border:1.5px solid rgba(0,0,0,.1)}
+
+/* ── Action row ── */
+.actions{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f4}
+.act{flex:1;padding:10px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
+.act:active{transform:scale(.95)}
+.act-blue{background:#eff6ff;color:#1d4ed8}
+.act-red{background:#fef2f2;color:#dc2626}
+.act-green{background:#f0fdf4;color:#15803d}
+
+/* ── Bottom nav ── */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;background:rgba(244,244,248,.92);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border-top:1px solid rgba(0,0,0,.07);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:none;border-radius:12px;color:#888;font-size:10px;font-weight:700;letter-spacing:.03em;cursor:pointer;transition:.15s;text-transform:uppercase;font-family:inherit}
+.nav-item .ni{font-size:21px;line-height:1}
+.nav-item.on{color:#3b5bdb}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));right:18px;width:54px;height:54px;border-radius:18px;background:#111118;color:#fff;border:none;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:200;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1);font-family:inherit}
+.fab:active{transform:scale(.88) rotate(45deg)}
+
+/* ── Segment ── */
+.seg{display:flex;background:rgba(0,0,0,.06);padding:4px;border-radius:15px;margin:0 16px 16px;gap:4px}
+.seg-btn{flex:1;padding:10px 8px;border:none;background:transparent;border-radius:12px;font-size:13px;font-weight:700;color:#888;cursor:pointer;transition:.2s;font-family:inherit}
+.seg-btn.on{background:#fff;color:#111118;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* ── Chips ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 16px 14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:8px 16px;border-radius:999px;border:1.5px solid rgba(0,0,0,.08);background:#fff;font-size:13px;font-weight:600;color:#666;white-space:nowrap;cursor:pointer;transition:.15s;font-family:inherit}
+.chip.on{background:#111118;color:#fff;border-color:#111118}
+
+/* ── Info rows ── */
+.row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#666;margin-top:7px;line-height:1.4}
+.row a{color:#3b5bdb;text-decoration:none;font-weight:600}
+
+/* ── Note block ── */
+.note{background:#eff6ff;border-left:3px solid #3b5bdb;border-radius:0 10px 10px 0;padding:10px 12px;margin-top:10px;font-size:13px;color:#111118}
+.note-lbl{font-size:10px;font-weight:800;color:#3b5bdb;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+
+/* ── Map link ── */
+.maplink{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:12px;background:#eff6ff;color:#1d4ed8;text-decoration:none;font-size:13px;font-weight:700;margin-top:10px}
+
+/* ── Photo strip ── */
+.strip{display:flex;gap:6px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.strip img{width:68px;height:68px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+
+/* ── Empty ── */
+.empty{display:flex;flex-direction:column;align-items:center;padding:56px 20px;text-align:center;color:#888}
+.empty .ei{font-size:48px;margin-bottom:14px;opacity:.5}
+.empty .et{font-size:16px;font-weight:700;color:#444}
+.empty .es{font-size:13px;margin-top:4px}
+
+/* ── Modal sheet ── */
+.modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center}
+.modal.open{animation:_oi .2s ease both}
+@keyframes _oi{from{opacity:0}}
+.sheet{background:#fff;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));max-height:92svh;overflow-y:auto;animation:_su .32s cubic-bezier(.2,1,.3,1)}
+@keyframes _su{from{transform:translateY(100%)}}
+.hdl{width:36px;height:4px;background:#e5e5ea;border-radius:2px;margin:0 auto 22px}
+.stitle{font-size:20px;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:20px}
+
+/* ── Price ── */
+.price{font-size:22px;font-weight:800;color:#f97316;letter-spacing:-.03em}
+.price::before{content:'$';font-size:14px;color:#aaa;margin-right:1px}
+
+/* ── Utilities ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.pb-nav{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.section{padding:14px 16px 0}
+
+
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 0}
+.sc{background:#fff;border-radius:18px;padding:16px;border:1px solid rgba(0,0,0,.05);box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.sc.full{grid-column:1/-1}
+.sl{font-size:10px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.sv{font-size:28px;font-weight:800;letter-spacing:-.04em}
+.td-row{display:flex;gap:22px;margin-top:8px}
+.ti-n{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.ti-l{font-size:11px;color:#888;font-weight:600;margin-top:2px}
+.bar-row{height:60px;display:flex;align-items:flex-end;gap:2px}
+.bar{flex:1;border-radius:3px 3px 0 0;background:#eff6ff;min-height:3px;transition:.4s cubic-bezier(.2,1,.3,1)}
+.bar:hover{background:#3b5bdb}
+.rank-row{display:flex;align-items:center;gap:12px;padding:12px;background:#f4f4f8;border-radius:13px;margin-bottom:8px}
+.rn{width:26px;height:26px;border-radius:50%;background:#eff6ff;color:#3b5bdb;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rn.g1{background:#fef9c3;color:#854d0e}
+.rn.g2{background:#f4f4f8;color:#888;border:1.5px solid rgba(0,0,0,.08)}
+.rn.g3{background:#ffedd5;color:#9a3412}
+.pie-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+</style>
+</head>
+<body class="pb-nav">
+<div id="_ov" style="display:none"><div class="_sp"></div><span>載入中...</span></div>
+
+<header class="hdr"><span class="hdr-title">數據統計</span><button class="hdr-btn" onclick="location.href='/'">返回</button></header>
+<div class="sum" id="_sum"></div>
+<div class="section" style="display:flex;flex-direction:column;gap:14px;padding-bottom:30px" id="_ch"></div>
+
+<div class="toast" id="toast"></div>
+<script>
+window.Auth={getToken(){return localStorage.getItem('auth_token')},setToken(t){localStorage.setItem('auth_token',t)},clear(){localStorage.clear()},headers(){const t=this.getToken();return t?{'Content-Type':'application/json','Authorization':'Bearer '+t}:{'Content-Type':'application/json'}}};
+window.apiFetch=async function(path,method='GET',body=null,isForm=false){const opts={method};if(isForm){const t=Auth.getToken();if(t)opts.headers={'Authorization':'Bearer '+t};opts.body=body}else{opts.headers=Auth.headers();if(body)opts.body=JSON.stringify(body)}const res=await fetch('/api'+path,opts);if(res.status===401&&!['/','/index.html',''].includes(location.pathname)){Auth.clear();location.href='/';throw new Error('401')}let data;try{data=await res.json()}catch{data={success:false,detail:'HTTP '+res.status+': '+res.statusText}}return{ok:res.ok,status:res.status,data}};
+let _tt=null;window.showToast=function(msg,type=''){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.className='toast show'+(type?' '+type:'');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3200)};
+window.showLoading=function(txt){const o=document.getElementById('_ov');if(!o)return;const s=o.querySelector('span');if(s)s.textContent=txt||'載入中...';o.style.display='flex';document.body.style.overflow='hidden'};
+window.hideLoading=function(){const o=document.getElementById('_ov');if(!o)return;o.style.display='none';document.body.style.overflow=''};
+window.openModal=function(id='modal'){const m=document.getElementById(id);if(!m)return;m.querySelectorAll('#_submit,[data-submit]').forEach(b=>{b.disabled=false;if(b.dataset.label)b.textContent=b.dataset.label});m.style.display='flex';requestAnimationFrame(()=>m.classList.add('open'))};
+window.closeModal=function(id='modal'){const m=document.getElementById(id);if(!m)return;m.classList.remove('open');setTimeout(()=>m.style.display='none',300)};
+window.esc=window.e=function(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')};
+window.fmtDateTime=function(iso){if(!iso)return'—';try{const d=new Date(iso);if(isNaN(d))return iso;const n=new Date(),h=(n-d)/3600000;if(h<1)return Math.floor((n-d)/60000)+'分鐘前';if(h<24)return Math.floor(h)+'小時前';return d.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}catch{return iso}};
+window.fmtPrice=n=>'$'+Number(n||0).toLocaleString();
+window.haversine=function(a,b,c,d){const R=6371,r=x=>x*Math.PI/180,v=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return R*2*Math.atan2(Math.sqrt(v),Math.sqrt(1-v))};
+let _loc=null;window.getLocation=()=>new Promise(res=>{if(_loc){res(_loc);return}if(!navigator.geolocation){res(null);return}const t=setTimeout(()=>res(null),4000);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(t);_loc={lat:p.coords.latitude,lng:p.coords.longitude};res(_loc)},()=>{clearTimeout(t);res(null)},{timeout:4000,maximumAge:60000})});
+window.haptic=t=>navigator.vibrate&&navigator.vibrate(t==='error'?[25,15,25]:8);
+
+
+const SC={open:'#f97316',accepted:'#3b5bdb',arrived:'#a855f7',completed:'#22c55e',cancelled:'#9ca3af'};
+const SL2={open:'待接單',accepted:'進行中',arrived:'清潔中',completed:'已完成',cancelled:'已取消'};
+const RC=['g1','g2','g3','',''];
+async function loadDash(){
+  showLoading('載入統計…');
+  try{
+    const[{data:d},{data:b}]=await Promise.all([apiFetch('/stats/dashboard?days=30'),apiFetch('/stats')]);
+    const dd=d.data||{},bd=b.data||{},s=dd.summary||{},t=dd.today||{};
+    document.getElementById('_sum').innerHTML=`
+      <div class="sc"><div class="sl">總訂單</div><div class="sv" style="color:#3b5bdb">${s.total_orders||0}</div></div>
+      <div class="sc"><div class="sl">完成訂單</div><div class="sv" style="color:#16a34a">${bd.orders?.completed||0}</div></div>
+      <div class="sc"><div class="sl">總收入</div><div class="sv" style="color:#f97316">$${Number(s.total_revenue||0).toLocaleString()}</div></div>
+      <div class="sc"><div class="sl">在線清潔員</div><div class="sv" style="color:#3b5bdb">${bd.cleaners?.online||0}</div></div>
+      <div class="sc full"><div class="sl">今日概覽</div>
+        <div class="td-row">
+          <div><div class="ti-n">${t.orders||0}</div><div class="ti-l">新訂單</div></div>
+          <div><div class="ti-n" style="color:#16a34a">${t.completed||0}</div><div class="ti-l">完成</div></div>
+          <div><div class="ti-n" style="color:#f97316">$${Number(t.revenue||0).toLocaleString()}</div><div class="ti-l">收入</div></div>
+        </div></div>`;
+    const tr=dd.order_trend||[],mx=Math.max(...tr.map(x=>x.count),1);
+    const bars=tr.slice(-30).map(x=>`<div class="bar" style="height:${Math.max(Math.round(x.count/mx*56),3)}px" title="${x.date}: ${x.count}單"></div>`).join('');
+    const dist=dd.status_distribution||[];
+    const pie=dist.map(x=>`<div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600"><div style="width:8px;height:8px;border-radius:50%;background:${SC[x.status]||'#888'}"></div>${SL2[x.status]||x.status}: <b>${x.count}</b></div>`).join('');
+    const topC=(dd.top_cleaners||[]).slice(0,5).map((c,i)=>`<div class="rank-row"><div class="rn ${RC[i]||''}">${i+1}</div><div style="flex:1"><div style="font-weight:700;font-size:15px">${e(c.name)}</div><div style="font-size:12px;color:#888">⭐${c.rating||5.0} · ${c.total_jobs||0}單</div></div><b style="color:#3b5bdb">${c.total_jobs||0}</b></div>`).join('');
+    const topP=(dd.top_properties||[]).slice(0,5).map((p,i)=>`<div class="rank-row"><div class="rn ${RC[i]||''}">${i+1}</div><div style="flex:1"><div style="font-weight:700;font-size:15px">${e(p.name)}</div><div style="font-size:12px;color:#888">📋 ${p.order_count||0}單</div></div><b style="color:#f97316">$${Number(p.total_revenue||0).toLocaleString()}</b></div>`).join('');
+    document.getElementById('_ch').innerHTML=`
+      <div class="sc"><div class="sl">30天訂單趨勢</div><div class="bar-row">${bars||'<span style="color:#aaa;font-size:13px">暫無數據</span>'}</div>${tr.length>1?`<div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-top:4px"><span>${tr[0].date}</span><span>${tr[tr.length-1].date}</span></div>`:''}</div>
+      <div class="sc"><div class="sl">狀態分佈</div><div class="pie-row">${pie||'<span style="color:#aaa;font-size:13px">暫無數據</span>'}</div></div>
+      <div><div style="font-size:15px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px">🏆 清潔員排行</div>${topC||'<div class="empty"><div class="ei">🏅</div><div class="et">暫無數據</div></div>'}</div>
+      <div><div style="font-size:15px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px">🏡 熱門房源</div>${topP||'<div class="empty"><div class="ei">&#127968;</div><div class="et">暫無數據</div></div>'}</div>`;
+  }catch(err){if(err.message!=='401')showToast('載入失敗','error')}
+  finally{hideLoading()}
+}
+loadDash();
+
+</script>
+</body>
+</html>

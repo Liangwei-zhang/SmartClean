@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d14">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b5bdb'/><text y='24' x='5' font-size='22'>&#127968;</text></svg>">
+<title>SmartClean</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{min-height:100svh;display:flex;flex-direction:column;font-family:-apple-system,'Inter',system-ui,sans-serif;background:#0d0d14;color:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:drift 12s ease-in-out infinite}
+.orb1{width:500px;height:500px;top:-15%;left:-10%;background:rgba(59,91,219,.35);animation-delay:0s}
+.orb2{width:400px;height:400px;bottom:-10%;right:-5%;background:rgba(112,72,232,.28);animation-delay:-4s}
+.orb3{width:300px;height:300px;top:40%;left:35%;background:rgba(32,178,170,.12);animation-delay:-8s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(.95)}}
+.grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:40px 40px}
+.wrap{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:48px 24px 40px;max-width:420px;margin:0 auto;width:100%}
+.logo{margin-bottom:48px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,91,219,.15);border:1px solid rgba(59,91,219,.3);padding:7px 14px;border-radius:999px;margin-bottom:20px}
+.dot{width:6px;height:6px;border-radius:50%;background:#60a5fa;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.badge-t{font-size:11px;font-weight:700;color:#93c5fd;letter-spacing:.06em;text-transform:uppercase}
+.title{font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:1;background:linear-gradient(160deg,#fff 40%,rgba(255,255,255,.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{font-size:15px;color:rgba(255,255,255,.38);margin-top:12px;line-height:1.6}
+.portals{display:flex;flex-direction:column;gap:10px}
+.portal{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:18px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.035);cursor:pointer;transition:all .18s}
+.portal:hover{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.07);transform:translateY(-1px)}
+.portal:active{transform:scale(.97)}
+.pi{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.pi-a{background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.18)}
+.pi-b{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.18)}
+.pi-c{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.18)}
+.pn{font-size:16px;font-weight:700;color:#fff}
+.pd{font-size:12px;color:rgba(255,255,255,.38);margin-top:2px}
+.pa{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.25);margin-left:auto;flex-shrink:0;transition:.18s}
+.portal:hover .pa{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+.modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(10px);align-items:flex-end;justify-content:center}
+.modal.open{display:flex;animation:fi .2s ease}
+@keyframes fi{from{opacity:0}}
+.sheet{width:100%;max-width:480px;background:rgba(16,16,26,.98);border:1px solid rgba(255,255,255,.09);border-radius:26px 26px 0 0;padding:22px 22px calc(22px + env(safe-area-inset-bottom));animation:su .3s cubic-bezier(.2,1,.3,1)}
+@keyframes su{from{transform:translateY(100%)}}
+.hdl{width:36px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 22px}
+.stitle{font-size:20px;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:20px;color:#fff}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:7px}
+.inp{width:100%;padding:14px 15px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.09);border-radius:13px;font-size:15px;font-weight:500;color:#fff;outline:none;transition:.15s;font-family:inherit}
+.inp::placeholder{color:rgba(255,255,255,.2)}
+.inp:focus{background:rgba(255,255,255,.1);border-color:rgba(96,165,250,.5);box-shadow:0 0 0 4px rgba(59,91,219,.12)}
+.btn{width:100%;padding:15px;border-radius:15px;font-size:15px;font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-p{background:#fff;color:#0d0d14}
+.btn-g{background:transparent;color:rgba(255,255,255,.35);border:1.5px solid rgba(255,255,255,.08);margin-top:8px}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(12px);background:rgba(22,22,34,.96);border:1px solid rgba(255,255,255,.1);color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transition:.3s cubic-bezier(.2,1,.3,1);z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:rgba(153,27,27,.97)}
+.toast.success{background:rgba(20,83,45,.97)}
+</style>
+</head>
+<body>
+<div class="bg"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="grid"></div>
+<div class="wrap">
+  <div class="logo">
+    <div class="badge"><div class="dot"></div><span class="badge-t">v5 · Production</span></div>
+    <div class="title">SmartClean</div>
+    <div class="sub">專業短租清潔調度協作平台</div>
+  </div>
+  <div class="portals">
+    <div class="portal" onclick="openLogin('host');setTimeout(doLogin,500)">
+      <div class="pi pi-a">&#127969;</div>
+      <div><div class="pn">房東門戶</div><div class="pd">管理物業 · 發布清潔 · 驗收完工</div></div>
+      <div class="pa">&#8250;</div>
+    </div>
+    <div class="portal" onclick="openLogin('cleaner');setTimeout(doLogin,500)">
+      <div class="pi pi-b">&#10024;</div>
+      <div><div class="pn">清潔夥伴</div><div class="pd">搶接任務 · 上傳完工照片</div></div>
+      <div class="pa">&#8250;</div>
+    </div>
+    <div class="portal" onclick="openLogin('admin');setTimeout(doLogin,500)">
+      <div class="pi pi-c">&#128202;</div>
+      <div><div class="pn">後台管理</div><div class="pd">數據報表 · 用戶管理 · 全域監控</div></div>
+      <div class="pa">&#8250;</div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet">
+    <div class="hdl"></div>
+    <div class="stitle" id="_title">登入</div>
+    <div id="_fields"></div>
+    <button class="btn btn-p" id="_submit" onclick="doLogin()">進入系統</button>
+    <button class="btn btn-g" onclick="closeModal()">取消</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+window.Auth={getToken(){return localStorage.getItem('auth_token')},setToken(t){localStorage.setItem('auth_token',t)},clear(){localStorage.clear()},headers(){const t=this.getToken();return t?{'Content-Type':'application/json','Authorization':'Bearer '+t}:{'Content-Type':'application/json'}}};
+window.apiFetch=async function(p,m='GET',b=null,f=false){const o={method:m};if(f){const t=Auth.getToken();if(t)o.headers={'Authorization':'Bearer '+t};o.body=b}else{o.headers=Auth.headers();if(b)o.body=JSON.stringify(b)}const r=await fetch('/api'+p,o);if(r.status===401&&!['/','/index.html',''].includes(location.pathname)){Auth.clear();location.href='/';throw new Error('401')}let d;try{d=await r.json()}catch{d={success:false,detail:'HTTP '+r.status}}return{ok:r.ok,status:r.status,data:d}};
+let _tt=null;window.showToast=function(m,t=''){const e=document.getElementById('toast');if(!e)return;e.textContent=m;e.className='toast show'+(t?' '+t:'');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('show'),3000)};
+window.haptic=t=>navigator.vibrate&&navigator.vibrate(t==='error'?[25,15,25]:8);
+function openModal(){document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+let _m='';
+function openLogin(mode){
+  _m=mode;
+  document.getElementById('_title').textContent={host:'房東登入',cleaner:'清潔夥伴登入',admin:'管理員登入'}[mode];
+  if(mode==='admin'){
+    document.getElementById('_fields').innerHTML='<div class="field"><label>手機號碼</label><input type="tel" id="f1" class="inp" placeholder="手機號碼" autocomplete="username" value="9999999999"></div><div class="field"><label>密碼</label><input type="password" id="f2" class="inp" placeholder="密碼" autocomplete="current-password" value="test1234" onkeydown="if(event.key===\'Enter\')doLogin()"></div>';
+  }else if(mode==='host'){
+    document.getElementById('_fields').innerHTML='<div class="field"><label>房東驗證碼</label><input type="text" id="f1" class="inp" placeholder="6-8 位驗證碼" autocapitalize="characters" autocomplete="off" spellcheck="false" value="1RGTSICD" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key===\'Enter\')doLogin()"></div>';
+  }else{
+    document.getElementById('_fields').innerHTML='<div class="field"><label>清潔夥伴驗證碼</label><input type="text" id="f1" class="inp" placeholder="6-8 位驗證碼" autocapitalize="characters" autocomplete="off" spellcheck="false" value="JL94ZC" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key===\'Enter\')doLogin()"></div>';
+  }
+  openModal();setTimeout(()=>document.getElementById('f1')?.focus(),300);
+}
+async function doLogin(){
+  const btn=document.getElementById('_submit');btn.disabled=true;btn.textContent='驗證中…';
+  try{
+    if(_m==='admin'){
+      const ph=(document.getElementById('f1')?.value||'').trim(),pw=document.getElementById('f2')?.value||'';
+      if(!ph||!pw){showToast('請填寫帳號與密碼','error');return}
+      const{ok,data}=await apiFetch('/auth/login','POST',{phone:ph,password:pw,user_type:'host'});
+      if(ok&&data.data?.token){Auth.setToken(data.data.token);localStorage.setItem('admin_name',data.data.name||'管理員');showToast('登入成功','success');setTimeout(()=>location.href='/admin',400)}
+      else showToast(data.detail||'帳號或密碼錯誤','error');
+    }else{
+      const c=(document.getElementById('f1')?.value||'').trim();
+      if(!c){showToast('請輸入驗證碼','error');return}
+      const{ok,data}=await apiFetch('/auth/login-by-code','POST',{code:c,user_type:_m});
+      if(ok&&data.data?.token){
+        const d=data.data;Auth.setToken(d.token);
+        if(_m==='host'){localStorage.setItem('host_id',d.user_id);localStorage.setItem('host_phone',d.phone);localStorage.setItem('host_name',d.name);showToast('登入成功','success');setTimeout(()=>location.href='/host',400)}
+        else{localStorage.setItem('cleaner_id',d.user_id);localStorage.setItem('cleaner_name',d.name);showToast('登入成功','success');setTimeout(()=>location.href='/cleaner',400)}
+      }else showToast(data.detail||'驗證碼錯誤','error');
+    }
+  }catch(e){if(e.message!=='401')showToast('網路錯誤','error')}
+  finally{btn.disabled=false;btn.textContent='進入系統'}
+}
+</script>
+</body>
+</html>

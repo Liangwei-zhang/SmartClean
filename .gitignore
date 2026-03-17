@@ -1,0 +1,47 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Secrets & environment (NEVER commit)
+.env
+.env.*
+!.env.example
+
+# User uploads (runtime data, not source code)
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sqlite
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SSL certs
+ssl/
+
+# Docker override
+docker-compose.override.yml

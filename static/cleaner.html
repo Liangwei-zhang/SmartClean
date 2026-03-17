@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f4f8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b5bdb'/><text y='24' x='4' font-size='22'>&#10024;</text></svg>">
+<title>清潔夥伴 – SmartClean</title>
+<style>
+
+/* SmartClean 2025 — Bold, Dark-Capable Design System */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,'Inter',system-ui,sans-serif;background:#f4f4f8;color:#111118;-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100svh}
+
+/* ── Loading ── */
+#_ov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,10,18,.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:14px}
+._sp{width:38px;height:38px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:_s .7s linear infinite}
+@keyframes _s{to{transform:rotate(360deg)}}
+#_ov span{color:#fff;font-size:14px;font-weight:600}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(12px);background:#111118;color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.18);opacity:0;transition:.3s cubic-bezier(.2,1,.3,1);z-index:9998;white-space:nowrap;pointer-events:none;border:1px solid rgba(255,255,255,.08)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:#b91c1c}
+.toast.success{background:#166534}
+
+/* ── Header ── */
+.hdr{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top)+12px) 18px 12px;background:rgba(244,244,248,.9);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border-bottom:1px solid rgba(0,0,0,.07)}
+.hdr-title{font-size:17px;font-weight:700;letter-spacing:-.025em}
+.hdr-btn{padding:7px 15px;border-radius:999px;border:1.5px solid rgba(0,0,0,.1);background:#fff;font-size:13px;font-weight:600;color:#444;cursor:pointer;transition:.15s;font-family:inherit}
+.hdr-btn:active{background:#f0f0f4}
+
+/* ── Cards ── */
+.card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.05)}
+.card+.card{margin-top:10px}
+
+/* ── Stats ── */
+.stats{display:grid;gap:10px;padding:14px 16px 0}
+.stat{background:#fff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.05);cursor:default}
+.stat-n{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.stat-l{font-size:11px;font-weight:600;color:#888;margin-top:5px;text-transform:uppercase;letter-spacing:.03em}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-open{background:#fff7ed;color:#c2410c}.b-open::before{background:#f97316}
+.b-accepted{background:#eff6ff;color:#1d4ed8}.b-accepted::before{background:#3b82f6}
+.b-arrived{background:#fdf4ff;color:#7e22ce}.b-arrived::before{background:#a855f7}
+.b-completed{background:#f0fdf4;color:#15803d}.b-completed::before{background:#22c55e}
+.b-cancelled{background:#f9fafb;color:#6b7280}.b-cancelled::before{background:#9ca3af}
+.b-verified{background:#ecfdf5;color:#065f46}.b-verified::before{background:#10b981}
+
+/* ── Inputs ── */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#888;margin-bottom:7px}
+.input{width:100%;padding:13px 15px;background:#f4f4f8;border:1.5px solid transparent;border-radius:13px;font-size:15px;font-weight:500;color:#111118;outline:none;transition:.15s;font-family:inherit}
+.input::placeholder{color:#aaa}
+.input:focus{background:#fff;border-color:#3b5bdb;box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+textarea.input{resize:none;line-height:1.5}
+select.input{cursor:pointer}
+
+/* ── Buttons ── */
+.btn{width:100%;padding:15px;border-radius:16px;font-size:15px;font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-primary{background:#111118;color:#fff}
+.btn-blue{background:#3b5bdb;color:#fff}
+.btn-ghost{background:transparent;color:#888;border:1.5px solid rgba(0,0,0,.1)}
+
+/* ── Action row ── */
+.actions{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f4}
+.act{flex:1;padding:10px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
+.act:active{transform:scale(.95)}
+.act-blue{background:#eff6ff;color:#1d4ed8}
+.act-red{background:#fef2f2;color:#dc2626}
+.act-green{background:#f0fdf4;color:#15803d}
+
+/* ── Bottom nav ── */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;background:rgba(244,244,248,.92);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border-top:1px solid rgba(0,0,0,.07);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:none;border-radius:12px;color:#888;font-size:10px;font-weight:700;letter-spacing:.03em;cursor:pointer;transition:.15s;text-transform:uppercase;font-family:inherit}
+.nav-item .ni{font-size:21px;line-height:1}
+.nav-item.on{color:#3b5bdb}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));right:18px;width:54px;height:54px;border-radius:18px;background:#111118;color:#fff;border:none;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:200;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1);font-family:inherit}
+.fab:active{transform:scale(.88) rotate(45deg)}
+
+/* ── Segment ── */
+.seg{display:flex;background:rgba(0,0,0,.06);padding:4px;border-radius:15px;margin:0 16px 16px;gap:4px}
+.seg-btn{flex:1;padding:10px 8px;border:none;background:transparent;border-radius:12px;font-size:13px;font-weight:700;color:#888;cursor:pointer;transition:.2s;font-family:inherit}
+.seg-btn.on{background:#fff;color:#111118;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* ── Chips ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 16px 14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:8px 16px;border-radius:999px;border:1.5px solid rgba(0,0,0,.08);background:#fff;font-size:13px;font-weight:600;color:#666;white-space:nowrap;cursor:pointer;transition:.15s;font-family:inherit}
+.chip.on{background:#111118;color:#fff;border-color:#111118}
+
+/* ── Info rows ── */
+.row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#666;margin-top:7px;line-height:1.4}
+.row a{color:#3b5bdb;text-decoration:none;font-weight:600}
+
+/* ── Note block ── */
+.note{background:#eff6ff;border-left:3px solid #3b5bdb;border-radius:0 10px 10px 0;padding:10px 12px;margin-top:10px;font-size:13px;color:#111118}
+.note-lbl{font-size:10px;font-weight:800;color:#3b5bdb;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+
+/* ── Map link ── */
+.maplink{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:12px;background:#eff6ff;color:#1d4ed8;text-decoration:none;font-size:13px;font-weight:700;margin-top:10px}
+
+/* ── Photo strip ── */
+.strip{display:flex;gap:6px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.strip img{width:68px;height:68px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+
+/* ── Empty ── */
+.empty{display:flex;flex-direction:column;align-items:center;padding:56px 20px;text-align:center;color:#888}
+.empty .ei{font-size:48px;margin-bottom:14px;opacity:.5}
+.empty .et{font-size:16px;font-weight:700;color:#444}
+.empty .es{font-size:13px;margin-top:4px}
+
+/* ── Modal sheet ── */
+.modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center}
+.modal.open{animation:_oi .2s ease both}
+@keyframes _oi{from{opacity:0}}
+.sheet{background:#fff;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));max-height:92svh;overflow-y:auto;animation:_su .32s cubic-bezier(.2,1,.3,1)}
+@keyframes _su{from{transform:translateY(100%)}}
+.hdl{width:36px;height:4px;background:#e5e5ea;border-radius:2px;margin:0 auto 22px}
+.stitle{font-size:20px;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:20px}
+
+/* ── Price ── */
+.price{font-size:22px;font-weight:800;color:#f97316;letter-spacing:-.03em}
+.price::before{content:'$';font-size:14px;color:#aaa;margin-right:1px}
+
+/* ── Utilities ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.pb-nav{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.section{padding:14px 16px 0}
+
+
+.job-card{background:#fff;border-radius:20px;padding:18px;margin-bottom:10px;border:1px solid rgba(0,0,0,.05);box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.04);animation:ci .4s cubic-bezier(.2,1,.3,1) both}
+@keyframes ci{from{opacity:0;transform:translateY(12px)}}
+.job-name{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:8px 0 2px}
+.dist-pill{display:inline-block;padding:3px 9px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700}
+.btn-grab{width:100%;margin-top:16px;padding:16px;border-radius:16px;background:#111118;color:#fff;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:.15s;font-family:inherit}
+.btn-grab:active{transform:scale(.97);opacity:.9}
+.btn-arrive{width:100%;margin-top:12px;padding:15px;border-radius:16px;background:linear-gradient(135deg,#f59f00,#d97706);color:#fff;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:.15s;font-family:inherit}
+.btn-done{width:100%;margin-top:10px;padding:15px;border-radius:16px;background:#3b5bdb;color:#fff;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:.15s;font-family:inherit}
+.btn-arrive:active,.btn-done:active{transform:scale(.97);opacity:.9}
+.sort-row{display:flex;gap:6px;padding:0 16px 12px}
+.sort-btn{flex:1;padding:9px 4px;border-radius:12px;border:1.5px solid rgba(0,0,0,.08);background:#fff;font-size:12px;font-weight:700;color:#888;text-align:center;cursor:pointer;transition:.15s;font-family:inherit}
+.sort-btn.on{background:#111118;color:#fff;border-color:#111118}
+.photo-modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
+.photo-modal.open{display:flex;animation:fi .2s ease}
+@keyframes fi{from{opacity:0}}
+.photo-box{background:#fff;width:100%;max-width:380px;padding:24px;border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.photo-box h3{font-size:17px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.photo-box p{font-size:13px;color:#888;margin-bottom:18px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.pslot{aspect-ratio:1;border-radius:12px;background:#f4f4f8;border:2px dashed rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:24px;color:#ccc;position:relative;overflow:hidden;cursor:pointer;transition:.15s}
+.pslot:hover{border-color:#3b5bdb;background:#eff6ff}
+.pslot img{width:100%;height:100%;object-fit:cover}
+.pdel{position:absolute;top:3px;right:3px;width:22px;height:22px;background:#dc2626;color:#fff;border:none;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;z-index:1;cursor:pointer;font-family:inherit}
+.voice-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#eff6ff;border-radius:12px;margin-top:10px}
+.vbtn{width:32px;height:32px;border-radius:50%;border:none;background:#3b5bdb;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;font-family:inherit}
+.vbtn.playing{background:#dc2626}
+
+</style>
+</head>
+<body class="pb-nav">
+<div id="_ov" style="display:none"><div class="_sp"></div><span>載入中...</span></div>
+
+<header class="hdr">
+  <span class="hdr-title" id="_ctitle">清潔夥伴</span>
+  <button class="hdr-btn" onclick="doLogout()">登出</button>
+</header>
+<div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:6px">
+  <div class="stat" onclick="goPg('my');setMF('accepted')" style="cursor:pointer">
+    <div class="stat-n" style="color:#3b5bdb" id="sPend">—</div><div class="stat-l">待辦</div></div>
+  <div class="stat" onclick="goPg('my')" style="cursor:pointer">
+    <div class="stat-n" id="sTot">—</div><div class="stat-l">累計</div></div>
+  <div class="stat">
+    <div class="stat-n" style="color:#f97316" id="sInc">$0</div><div class="stat-l">本月</div></div>
+</div>
+<div class="seg">
+  <button class="seg-btn on" id="tOpen" onclick="goPg('open')">🔔 搶單</button>
+  <button class="seg-btn"    id="tMy"   onclick="goPg('my')">📋 我的</button>
+</div>
+<div class="sort-row" id="_sr">
+  <button class="sort-btn on" id="sTime"  onclick="setSort('time')">🕐 退房時間</button>
+  <button class="sort-btn"    id="sPrice" onclick="setSort('price')">💰 金額</button>
+  <button class="sort-btn"    id="sDist"  onclick="setSort('dist')">📍 距離</button>
+</div>
+<div class="chips" id="_mc" style="display:none">
+  <div class="chip on" data-f="all"       onclick="setMF('all')">全部</div>
+  <div class="chip"    data-f="accepted"  onclick="setMF('accepted')">🔄 進行中</div>
+  <div class="chip"    data-f="completed" onclick="setMF('completed')">✅ 已完成</div>
+</div>
+<div class="section">
+  <div id="_openList"></div>
+  <div id="_myList" style="display:none"></div>
+</div>
+<div class="photo-modal" id="photoModal">
+  <div class="photo-box">
+    <h3>📸 上傳完工照片</h3><p>最多 5 張，點擊方格新增</p>
+    <div class="pgrid" id="_pg"></div>
+    <input type="file" id="_pIn" accept="image/*" multiple style="display:none">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px">
+      <button class="btn btn-primary" id="_ps" data-label="✅ 提交完工" onclick="doSubmit()">✅ 提交完工</button>
+      <button class="btn btn-ghost" onclick="closePhoto()">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+window.Auth={getToken(){return localStorage.getItem('auth_token')},setToken(t){localStorage.setItem('auth_token',t)},clear(){localStorage.clear()},headers(){const t=this.getToken();return t?{'Content-Type':'application/json','Authorization':'Bearer '+t}:{'Content-Type':'application/json'}}};
+window.apiFetch=async function(path,method='GET',body=null,isForm=false){const opts={method};if(isForm){const t=Auth.getToken();if(t)opts.headers={'Authorization':'Bearer '+t};opts.body=body}else{opts.headers=Auth.headers();if(body)opts.body=JSON.stringify(body)}const res=await fetch('/api'+path,opts);if(res.status===401&&!['/','/index.html',''].includes(location.pathname)){Auth.clear();location.href='/';throw new Error('401')}let data;try{data=await res.json()}catch{data={success:false,detail:'HTTP '+res.status+': '+res.statusText}}return{ok:res.ok,status:res.status,data}};
+let _tt=null;window.showToast=function(msg,type=''){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.className='toast show'+(type?' '+type:'');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3200)};
+window.showLoading=function(txt){const o=document.getElementById('_ov');if(!o)return;const s=o.querySelector('span');if(s)s.textContent=txt||'載入中...';o.style.display='flex';document.body.style.overflow='hidden'};
+window.hideLoading=function(){const o=document.getElementById('_ov');if(!o)return;o.style.display='none';document.body.style.overflow=''};
+window.openModal=function(id='modal'){const m=document.getElementById(id);if(!m)return;m.querySelectorAll('#_submit,[data-submit]').forEach(b=>{b.disabled=false;if(b.dataset.label)b.textContent=b.dataset.label});m.style.display='flex';requestAnimationFrame(()=>m.classList.add('open'))};
+window.closeModal=function(id='modal'){const m=document.getElementById(id);if(!m)return;m.classList.remove('open');setTimeout(()=>m.style.display='none',300)};
+window.esc=window.e=function(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')};
+window.fmtDateTime=function(iso){if(!iso)return'—';try{const d=new Date(iso);if(isNaN(d))return iso;const n=new Date(),h=(n-d)/3600000;if(h<1)return Math.floor((n-d)/60000)+'分鐘前';if(h<24)return Math.floor(h)+'小時前';return d.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}catch{return iso}};
+window.fmtPrice=n=>'$'+Number(n||0).toLocaleString();
+window.haversine=function(a,b,c,d){const R=6371,r=x=>x*Math.PI/180,v=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return R*2*Math.atan2(Math.sqrt(v),Math.sqrt(1-v))};
+let _loc=null;window.getLocation=()=>new Promise(res=>{if(_loc){res(_loc);return}if(!navigator.geolocation){res(null);return}const t=setTimeout(()=>res(null),4000);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(t);_loc={lat:p.coords.latitude,lng:p.coords.longitude};res(_loc)},()=>{clearTimeout(t);res(null)},{timeout:4000,maximumAge:60000})});
+window.haptic=t=>navigator.vibrate&&navigator.vibrate(t==='error'?[25,15,25]:8);
+
+
+const cleanerId=parseInt(localStorage.getItem('cleaner_id'))||0;
+const cleanerName=localStorage.getItem('cleaner_name')||'清潔夥伴';
+if(!cleanerId){location.href='/';throw 0}
+document.getElementById('_ctitle').textContent=cleanerName;
+function doLogout(){Auth.clear();location.href='/'}
+
+let pg='open',openOrders=[],myOrders=[],myFlt='all',sortType='time';
+
+function goPg(p){
+  pg=p;
+  document.getElementById('_openList').style.display=p==='open'?'':'none';
+  document.getElementById('_myList').style.display=p==='my'?'':'none';
+  document.getElementById('_sr').style.display=p==='open'?'flex':'none';
+  document.getElementById('_mc').style.display=p==='my'?'flex':'none';
+  document.getElementById('tOpen').classList.toggle('on',p==='open');
+  document.getElementById('tMy').classList.toggle('on',p==='my');
+  p==='open'?loadOpen():loadMy();
+}
+function setSort(t){sortType=t;['Time','Price','Dist'].forEach(x=>document.getElementById('s'+x).classList.toggle('on',t===x.toLowerCase()));renderOpen()}
+function setMF(f){myFlt=f;document.querySelectorAll('#_mc .chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f));renderMy()}
+
+async function loadStats(){
+  const{ok,data}=await apiFetch('/orders/cleaner/'+cleanerId);if(!ok)return;
+  const orders=data.data||[],now=new Date(),ms=new Date(now.getFullYear(),now.getMonth(),1);
+  document.getElementById('sPend').textContent=orders.filter(o=>o.status==='accepted'||o.status==='arrived').length;
+  document.getElementById('sTot').textContent=orders.length;
+  const inc=orders.filter(o=>o.status==='completed'&&new Date(o.completed_at||0)>=ms).reduce((s,o)=>s+(+o.price||0),0);
+  document.getElementById('sInc').textContent='$'+inc.toLocaleString();
+}
+async function loadOpen(){
+  showLoading('搜尋任務…');
+  const{ok,data}=await apiFetch('/orders?status=open&limit=100');
+  hideLoading();if(!ok){showToast('載入失敗','error');return}
+  openOrders=(data.data||[]).filter(o=>!o.cleaner_id);
+  getLocation().then(loc=>{
+    if(loc)openOrders.forEach(o=>{if(o.property_lat&&o.property_lng)o._d=haversine(loc.lat,loc.lng,o.property_lat,o.property_lng)});
+    renderOpen();
+  });renderOpen();
+}
+function renderOpen(){
+  const list=[...openOrders].sort((a,b)=>sortType==='price'?(b.price||0)-(a.price||0):sortType==='dist'?(a._d??9999)-(b._d??9999):(a.checkout_time||'')<(b.checkout_time||'')?-1:1);
+  const el=document.getElementById('_openList');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="ei">📥</div><div class="et">暫無可搶任務</div><div class="es">有新訂單時即時推送</div></div>';return}
+  el.innerHTML=list.map((o,i)=>`
+    <div class="job-card" style="animation-delay:${i*.03}s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">${o._d!=null?`<span class="dist-pill">${o._d.toFixed(1)} km</span><br>`:''}
+          <div class="job-name">${e(o.property_name)||'未命名'}</div></div>
+        <div class="price">${o.price}</div>
+      </div>
+      <div class="row">📍 ${e(o.property_address||'—')}</div>
+      <div class="row">🕐 退房 ${fmtDateTime(o.checkout_time)}</div>
+      ${o.text_notes?`<div class="note"><div class="note-lbl">備註</div>${e(o.text_notes)}</div>`:''}
+      <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.property_address||o.property_name||'')}" class="maplink" target="_blank">↗ 地圖導航</a>
+      <button class="btn-grab" onclick="doGrab(${o.id},'${e(o.property_name||'')}')">✋ 立即搶單</button>
+    </div>`).join('');
+}
+function doGrab(id,name){if(!confirm('確定接下「'+name+'」？'))return;grabOrder(id)}
+async function grabOrder(id){
+  showLoading('接單中…');
+  const{ok,data}=await apiFetch('/orders/'+id+'/accept','POST',{cleaner_id:cleanerId,cleaner_name:cleanerName});
+  hideLoading();
+  if(ok){showToast('🎉 搶單成功！','success');haptic();openOrders=openOrders.filter(o=>o.id!==id);renderOpen();loadStats();setTimeout(()=>goPg('my'),600)}
+  else showToast(data.detail||'搶單失敗','error');
+}
+async function loadMy(){
+  showLoading('載入任務…');
+  const{ok,data}=await apiFetch('/orders/cleaner/'+cleanerId);
+  hideLoading();if(!ok){showToast('載入失敗','error');return}
+  myOrders=data.data||[];renderMy();
+}
+function renderMy(){
+  const LABELS={open:'待搶',accepted:'進行中',arrived:'清潔中',completed:'已完成',cancelled:'已取消'};
+  let list=[...myOrders];
+  if(myFlt==='accepted')list=list.filter(o=>o.status==='accepted'||o.status==='arrived');
+  else if(myFlt==='completed')list=list.filter(o=>o.status==='completed');
+  const el=document.getElementById('_myList');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="ei">🗂</div><div class="et">暫無任務記錄</div></div>';return}
+  el.innerHTML=list.map((o,i)=>`
+    <div class="job-card" style="animation-delay:${i*.03}s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span class="badge b-${o.status}">${LABELS[o.status]||o.status}</span>
+        <div class="price">${o.price}</div>
+      </div>
+      <div class="job-name">${e(o.property_name)||'—'}</div>
+      <div class="row">📍 ${e(o.property_address||'—')}</div>
+      ${o.host_phone?`<div class="row">📱 <a href="tel:${e(o.host_phone)}">${e(o.host_phone)}</a></div>`:''}
+      <div class="row">🕐 ${fmtDateTime(o.checkout_time)}</div>
+      ${o.text_notes?`<div class="note"><div class="note-lbl">備註</div>${e(o.text_notes)}</div>`:''}
+      ${o.voice_url?`<div class="voice-row"><button class="vbtn" id="vb${o.id}" onclick="playV(this,'${e(o.voice_url)}')">▶</button><span style="font-size:13px;font-weight:600">語音備註</span></div>`:''}
+      ${rPhotos(o.completion_photos)}
+      <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.property_address||o.property_name||'')}" class="maplink" target="_blank">↗ 導航地圖</a>
+      ${o.status==='accepted'?`<button class="btn-arrive" onclick="setStatus(${o.id},'arrived')">📍 我已到達</button>`:''}
+      ${o.status==='arrived'?`<button class="btn-done" onclick="openPhoto(${o.id})">✅ 清潔完成 · 上傳照片</button>`:''}
+    </div>`).join('');
+}
+function rPhotos(pj){if(!pj)return'';try{const p=typeof pj==='string'?JSON.parse(pj):(pj||[]);return p.length?'<div class="strip">'+p.map(u=>`<img src="${e(u)}" onclick="window.open('${e(u)}','_blank')" loading="lazy">`).join('')+'</div>':''}catch{return''}}
+async function setStatus(id,status){const{ok}=await apiFetch('/orders/'+id,'PATCH',{status});if(ok){showToast(status==='arrived'?'📍 已到達！':'','success');loadMy();loadStats()}else showToast('操作失敗','error')}
+let _au=null;
+function playV(btn,url){if(_au){_au.pause();_au=null}if(btn.classList.contains('playing')){btn.textContent='▶';btn.classList.remove('playing');return}_au=new Audio(url);_au.play().catch(()=>showToast('無法播放'));btn.textContent='⏸';btn.classList.add('playing');_au.onended=()=>{btn.textContent='▶';btn.classList.remove('playing');_au=null}}
+let _co=null,_urls=[];
+function openPhoto(id){_co=id;_urls=[];renderGrid();document.getElementById('photoModal').classList.add('open')}
+function closePhoto(){document.getElementById('photoModal').classList.remove('open');_co=null}
+function renderGrid(){const g=document.getElementById('_pg');g.innerHTML=_urls.map((u,i)=>`<div class="pslot"><img src="${u}"><button class="pdel" onclick="delP(${i});event.stopPropagation()">✕</button></div>`).join('')+(_urls.length<5?'<div class="pslot" onclick="document.getElementById(\'_pIn\').click()">➕</div>':'')}
+function delP(i){_urls.splice(i,1);renderGrid()}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('_pIn')?.addEventListener('change',async ev=>{
+    const files=[...(ev.target.files||[])].slice(0,5-_urls.length);
+    showLoading('上傳中…');
+    for(const f of files){const u=await uploadImg(f);if(u)_urls.push(u)}
+    ev.target.value='';hideLoading();renderGrid();
+  });
+});
+function compress(file,maxPx=1200,q=.82){return new Promise(res=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,maxPx/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(b=>res(b),'image/jpeg',q)};img.src=url})}
+async function uploadImg(file){try{const blob=await compress(file),fd=new FormData();fd.append('file',blob,'photo.jpg');const{ok,data}=await apiFetch('/upload/image','POST',fd,true);return ok?data.data?.url:null}catch{showToast('上傳失敗','error');return null}}
+async function doSubmit(){
+  if(!_co){showToast('錯誤');return}if(!_urls.length){showToast('請上傳至少一張照片');return}
+  const btn=document.getElementById('_ps');btn.disabled=true;btn.textContent='提交中…';
+  try{const{ok}=await apiFetch('/orders/'+_co,'PATCH',{status:'completed',completion_photos:JSON.stringify(_urls)});if(ok){showToast('🎉 完工！等待驗收','success');closePhoto();loadMy();loadStats()}else showToast('提交失敗','error')}
+  finally{btn.disabled=false;btn.textContent='✅ 提交完工'}
+}
+let ws=null,wsT=null;
+function connectWS(){
+  if(ws&&(ws.readyState===0||ws.readyState===1))return;
+  const p=location.protocol==='https:'?'wss:':'ws:',t=Auth.getToken()||'';
+  ws=new WebSocket(p+'//'+location.host+'/api/orders/ws/orders/'+cleanerId+'?token='+encodeURIComponent(t));
+  ws.onopen=()=>clearTimeout(wsT);
+  ws.onmessage=ev=>{try{const m=JSON.parse(ev.data);if(m.type==='ping'){ws.send(JSON.stringify({type:'pong'}));return}if(m.type==='new_order'&&pg==='open')loadOpen();if(m.type==='order_taken'){openOrders=openOrders.filter(o=>o.id!==m.order_id);renderOpen()}}catch{}};
+  ws.onclose=()=>{wsT=setTimeout(connectWS,5000)};ws.onerror=()=>ws.close();
+}
+loadStats();loadOpen();connectWS();
+
+</script>
+</body>
+</html>

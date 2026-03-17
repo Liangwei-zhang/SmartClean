@@ -1,0 +1,159 @@
+# SmartClean 生產部署 — 100萬日活調優版
+# 使用前: cp .env.example .env && 填入所有 CHANGE_ME 值
+
+services:
+
+  # ── PostgreSQL + PostGIS ────────────────────────────────────────────────────
+  postgres:
+    image: postgis/postgis:15-3.4
+    container_name: sc_db
+    environment:
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB:       smartclean
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/spatial_indexes.sql:/docker-entrypoint-initdb.d/01_spatial.sql:ro
+    command: >
+      postgres
+        -c max_connections=200
+        -c shared_buffers=1GB
+        -c effective_cache_size=3GB
+        -c maintenance_work_mem=256MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=16MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c work_mem=10MB
+        -c min_wal_size=1GB
+        -c max_wal_size=4GB
+    expose: ["5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s; timeout: 5s; retries: 5
+    restart: unless-stopped
+
+  # ── PgBouncer — 連接池 ─────────────────────────────────────────────────────
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: sc_pgbouncer
+    environment:
+      DATABASE:          smartclean
+      DB_HOST:           postgres
+      DB_PORT:           5432
+      POOL_MODE:         transaction
+      MAX_CLIENT_CONN:   1000          # 100萬日活：支持大量並發客戶端
+      DEFAULT_POOL_SIZE: 50            # 每數據庫連接池大小
+      MIN_POOL_SIZE:     10
+      RESERVE_POOL_SIZE: 20
+      SERVER_IDLE_TIMEOUT: 600
+      USERS:             ${DB_USER}/${DB_PASSWORD}
+    expose: ["5432"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: unless-stopped
+
+  # ── Redis — 緩存 / Pub-Sub / 限流 ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: sc_redis
+    command: >
+      redis-server
+        --appendonly yes
+        --maxmemory 2gb
+        --maxmemory-policy allkeys-lru
+        --requirepass ${REDIS_PASSWORD}
+        --tcp-backlog 511
+        --hz 20
+        --save 900 1
+        --save 300 10
+    volumes:
+      - redis_data:/data
+    expose: ["6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s; timeout: 5s; retries: 5
+    ulimits:
+      nofile: { soft: 65535, hard: 65535 }
+    restart: unless-stopped
+
+  # ── SmartClean API ─────────────────────────────────────────────────────────
+  api:
+    build: .
+    container_name: sc_api
+    # 100萬日活：4 workers × 4 threads = 16 並發，asyncio 自動擴展
+    command: >
+      uvicorn app.main:app
+        --host 0.0.0.0 --port 8000
+        --workers 4
+        --loop uvloop
+        --http httptools
+        --log-level warning
+        --access-log
+    environment:
+      DATABASE_URL:      postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer:5432/smartclean
+      DATABASE_URL_SYNC: postgresql://${DB_USER}:${DB_PASSWORD}@pgbouncer:5432/smartclean
+      REDIS_URL:         redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY:        ${SECRET_KEY}
+      CORS_ORIGINS:      ${CORS_ORIGINS:-}
+      S3_ENABLED:        ${S3_ENABLED:-false}
+      S3_ENDPOINT_URL:   ${S3_ENDPOINT_URL:-}
+      S3_ACCESS_KEY:     ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY:     ${S3_SECRET_KEY:-}
+      S3_BUCKET:         ${S3_BUCKET:-smartclean}
+      X_BEARER_TOKEN:    ${X_BEARER_TOKEN}
+      DEBUG:             "false"
+    volumes:
+      - uploads_data:/app/uploads
+    expose: ["8000"]
+    depends_on:
+      pgbouncer: { condition: service_healthy }   # wait for DB
+      redis:     { condition: service_healthy }
+    restart: unless-stopped
+    ulimits:
+      nofile: { soft: 65535, hard: 65535 }
+    deploy:
+      resources:
+        limits:   { cpus: "4", memory: 4G }
+        reservations: { cpus: "1", memory: 1G }
+
+  # ── Arq Worker ─────────────────────────────────────────────────────────────
+  worker:
+    build: .
+    container_name: sc_worker
+    command: python -m arq app.tasks.worker.WorkerSettings
+    environment:
+      DATABASE_URL:      postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer:5432/smartclean
+      DATABASE_URL_SYNC: postgresql://${DB_USER}:${DB_PASSWORD}@pgbouncer:5432/smartclean
+      REDIS_URL:         redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY:        ${SECRET_KEY}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # ── Nginx ─────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: sc_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx_proxy_params:/etc/nginx/proxy_params:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - uploads_data:/app/uploads:ro
+      - static_data:/app/static:ro
+    depends_on:
+      - api
+    ulimits:
+      nofile: { soft: 65535, hard: 65535 }
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+  static_data:

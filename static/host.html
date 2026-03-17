@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f4f8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b5bdb'/><text y='24' x='4' font-size='22'>&#127969;</text></svg>">
+<title>房東門戶 – SmartClean</title>
+<style>
+
+/* SmartClean 2025 — Bold, Dark-Capable Design System */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,'Inter',system-ui,sans-serif;background:#f4f4f8;color:#111118;-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100svh}
+
+/* ── Loading ── */
+#_ov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,10,18,.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:14px}
+._sp{width:38px;height:38px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:_s .7s linear infinite}
+@keyframes _s{to{transform:rotate(360deg)}}
+#_ov span{color:#fff;font-size:14px;font-weight:600}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(12px);background:#111118;color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.18);opacity:0;transition:.3s cubic-bezier(.2,1,.3,1);z-index:9998;white-space:nowrap;pointer-events:none;border:1px solid rgba(255,255,255,.08)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:#b91c1c}
+.toast.success{background:#166534}
+
+/* ── Header ── */
+.hdr{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top)+12px) 18px 12px;background:rgba(244,244,248,.9);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border-bottom:1px solid rgba(0,0,0,.07)}
+.hdr-title{font-size:17px;font-weight:700;letter-spacing:-.025em}
+.hdr-btn{padding:7px 15px;border-radius:999px;border:1.5px solid rgba(0,0,0,.1);background:#fff;font-size:13px;font-weight:600;color:#444;cursor:pointer;transition:.15s;font-family:inherit}
+.hdr-btn:active{background:#f0f0f4}
+
+/* ── Cards ── */
+.card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.05)}
+.card+.card{margin-top:10px}
+
+/* ── Stats ── */
+.stats{display:grid;gap:10px;padding:14px 16px 0}
+.stat{background:#fff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.05);cursor:default}
+.stat-n{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.stat-l{font-size:11px;font-weight:600;color:#888;margin-top:5px;text-transform:uppercase;letter-spacing:.03em}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-open{background:#fff7ed;color:#c2410c}.b-open::before{background:#f97316}
+.b-accepted{background:#eff6ff;color:#1d4ed8}.b-accepted::before{background:#3b82f6}
+.b-arrived{background:#fdf4ff;color:#7e22ce}.b-arrived::before{background:#a855f7}
+.b-completed{background:#f0fdf4;color:#15803d}.b-completed::before{background:#22c55e}
+.b-cancelled{background:#f9fafb;color:#6b7280}.b-cancelled::before{background:#9ca3af}
+.b-verified{background:#ecfdf5;color:#065f46}.b-verified::before{background:#10b981}
+
+/* ── Inputs ── */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#888;margin-bottom:7px}
+.input{width:100%;padding:13px 15px;background:#f4f4f8;border:1.5px solid transparent;border-radius:13px;font-size:15px;font-weight:500;color:#111118;outline:none;transition:.15s;font-family:inherit}
+.input::placeholder{color:#aaa}
+.input:focus{background:#fff;border-color:#3b5bdb;box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+textarea.input{resize:none;line-height:1.5}
+select.input{cursor:pointer}
+
+/* ── Buttons ── */
+.btn{width:100%;padding:15px;border-radius:16px;font-size:15px;font-weight:700;letter-spacing:-.01em;border:none;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-primary{background:#111118;color:#fff}
+.btn-blue{background:#3b5bdb;color:#fff}
+.btn-ghost{background:transparent;color:#888;border:1.5px solid rgba(0,0,0,.1)}
+
+/* ── Action row ── */
+.actions{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f4}
+.act{flex:1;padding:10px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
+.act:active{transform:scale(.95)}
+.act-blue{background:#eff6ff;color:#1d4ed8}
+.act-red{background:#fef2f2;color:#dc2626}
+.act-green{background:#f0fdf4;color:#15803d}
+
+/* ── Bottom nav ── */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;background:rgba(244,244,248,.92);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);border-top:1px solid rgba(0,0,0,.07);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:none;border-radius:12px;color:#888;font-size:10px;font-weight:700;letter-spacing:.03em;cursor:pointer;transition:.15s;text-transform:uppercase;font-family:inherit}
+.nav-item .ni{font-size:21px;line-height:1}
+.nav-item.on{color:#3b5bdb}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));right:18px;width:54px;height:54px;border-radius:18px;background:#111118;color:#fff;border:none;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:200;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1);font-family:inherit}
+.fab:active{transform:scale(.88) rotate(45deg)}
+
+/* ── Segment ── */
+.seg{display:flex;background:rgba(0,0,0,.06);padding:4px;border-radius:15px;margin:0 16px 16px;gap:4px}
+.seg-btn{flex:1;padding:10px 8px;border:none;background:transparent;border-radius:12px;font-size:13px;font-weight:700;color:#888;cursor:pointer;transition:.2s;font-family:inherit}
+.seg-btn.on{background:#fff;color:#111118;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* ── Chips ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 16px 14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:8px 16px;border-radius:999px;border:1.5px solid rgba(0,0,0,.08);background:#fff;font-size:13px;font-weight:600;color:#666;white-space:nowrap;cursor:pointer;transition:.15s;font-family:inherit}
+.chip.on{background:#111118;color:#fff;border-color:#111118}
+
+/* ── Info rows ── */
+.row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#666;margin-top:7px;line-height:1.4}
+.row a{color:#3b5bdb;text-decoration:none;font-weight:600}
+
+/* ── Note block ── */
+.note{background:#eff6ff;border-left:3px solid #3b5bdb;border-radius:0 10px 10px 0;padding:10px 12px;margin-top:10px;font-size:13px;color:#111118}
+.note-lbl{font-size:10px;font-weight:800;color:#3b5bdb;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+
+/* ── Map link ── */
+.maplink{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:12px;background:#eff6ff;color:#1d4ed8;text-decoration:none;font-size:13px;font-weight:700;margin-top:10px}
+
+/* ── Photo strip ── */
+.strip{display:flex;gap:6px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.strip img{width:68px;height:68px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+
+/* ── Empty ── */
+.empty{display:flex;flex-direction:column;align-items:center;padding:56px 20px;text-align:center;color:#888}
+.empty .ei{font-size:48px;margin-bottom:14px;opacity:.5}
+.empty .et{font-size:16px;font-weight:700;color:#444}
+.empty .es{font-size:13px;margin-top:4px}
+
+/* ── Modal sheet ── */
+.modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center}
+.modal.open{animation:_oi .2s ease both}
+@keyframes _oi{from{opacity:0}}
+.sheet{background:#fff;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));max-height:92svh;overflow-y:auto;animation:_su .32s cubic-bezier(.2,1,.3,1)}
+@keyframes _su{from{transform:translateY(100%)}}
+.hdl{width:36px;height:4px;background:#e5e5ea;border-radius:2px;margin:0 auto 22px}
+.stitle{font-size:20px;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:20px}
+
+/* ── Price ── */
+.price{font-size:22px;font-weight:800;color:#f97316;letter-spacing:-.03em}
+.price::before{content:'$';font-size:14px;color:#aaa;margin-right:1px}
+
+/* ── Utilities ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.pb-nav{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.section{padding:14px 16px 0}
+
+
+.order-card{background:#fff;border-radius:20px;padding:18px;margin-bottom:10px;border:1px solid rgba(0,0,0,.05);box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.04);animation:ci .4s cubic-bezier(.2,1,.3,1) both}
+@keyframes ci{from{opacity:0;transform:translateY(12px)}}
+.oc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.oc-name{font-size:17px;font-weight:700;letter-spacing:-.02em;margin-top:8px}
+.gallery-ov{display:none;position:fixed;inset:0;z-index:2000;background:#0d0d14;flex-direction:column}
+.gallery-ov.open{display:flex;animation:fi .2s ease}
+@keyframes fi{from{opacity:0}}
+.gal-hdr{display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top)+16px) 18px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.gal-hdr h3{color:#fff;font-size:17px;font-weight:700}
+.gal-close{background:rgba(255,255,255,.08);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit}
+.gal-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px}
+.gal-grid img{width:100%;border-radius:16px;aspect-ratio:1;object-fit:cover;cursor:pointer}
+.gal-foot{padding:14px 18px calc(14px + env(safe-area-inset-bottom))}
+.verified-tag{padding:15px;background:#f0fdf4;border-radius:16px;text-align:center;color:#15803d;font-weight:700;font-size:15px}
+.addr-hint{font-size:12px;font-weight:600;margin-top:5px;min-height:16px}
+.addr-ok{color:#15803d}.addr-err{color:#dc2626}
+
+</style>
+</head>
+<body class="pb-nav">
+<div id="_ov" style="display:none"><div class="_sp"></div><span>載入中...</span></div>
+
+<header class="hdr">
+  <span class="hdr-title" id="_htitle">房東門戶</span>
+  <button class="hdr-btn" onclick="doLogout()">登出</button>
+</header>
+<div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:6px">
+  <div class="stat"><div class="stat-n" style="color:#f97316" id="sO">—</div><div class="stat-l">待接單</div></div>
+  <div class="stat"><div class="stat-n" style="color:#3b5bdb" id="sA">—</div><div class="stat-l">進行中</div></div>
+  <div class="stat"><div class="stat-n" style="color:#16a34a" id="sP">—</div><div class="stat-l">待驗收</div></div>
+</div>
+<div class="seg">
+  <button class="seg-btn on" id="tO" onclick="goPg('orders')">📋 訂單</button>
+  <button class="seg-btn"    id="tP" onclick="goPg('props')">🏡 房源</button>
+</div>
+<div class="chips" id="_chips">
+  <div class="chip on" data-f="all"      onclick="setF('all')">全部</div>
+  <div class="chip"    data-f="open"     onclick="setF('open')">⏳ 待接</div>
+  <div class="chip"    data-f="accepted" onclick="setF('accepted')">🔄 進行中</div>
+  <div class="chip"    data-f="pending"  onclick="setF('pending')">📸 待驗收</div>
+  <div class="chip"    data-f="verified" onclick="setF('verified')">✅ 已驗收</div>
+</div>
+<div class="section">
+  <div id="_orders"></div>
+  <div id="_props" style="display:none"></div>
+</div>
+<button class="fab" onclick="onFab()">+</button>
+<nav class="nav">
+  <button class="nav-item on" id="nO" onclick="goPg('orders')"><span class="ni">📋</span>訂單</button>
+  <button class="nav-item"    id="nP" onclick="goPg('props')"><span class="ni">🏡</span>房源</button>
+</nav>
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet" style="max-height:92svh;overflow-y:auto">
+    <div class="hdl"></div>
+    <div class="stitle" id="_mt">表單</div>
+    <div id="_mb"></div>
+    <button class="btn btn-primary" id="_submit" data-label="確認" style="margin-top:14px">確認</button>
+    <button class="btn btn-ghost" onclick="closeModal()" style="margin-top:8px">取消</button>
+  </div>
+</div>
+<div class="gallery-ov" id="gallery">
+  <div class="gal-hdr"><h3>📸 完工照片</h3><button class="gal-close" onclick="closeGal()">✕</button></div>
+  <div class="gal-grid" id="_gg"></div>
+  <div class="gal-foot" id="_gf"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+window.Auth={getToken(){return localStorage.getItem('auth_token')},setToken(t){localStorage.setItem('auth_token',t)},clear(){localStorage.clear()},headers(){const t=this.getToken();return t?{'Content-Type':'application/json','Authorization':'Bearer '+t}:{'Content-Type':'application/json'}}};
+window.apiFetch=async function(path,method='GET',body=null,isForm=false){const opts={method};if(isForm){const t=Auth.getToken();if(t)opts.headers={'Authorization':'Bearer '+t};opts.body=body}else{opts.headers=Auth.headers();if(body)opts.body=JSON.stringify(body)}const res=await fetch('/api'+path,opts);if(res.status===401&&!['/','/index.html',''].includes(location.pathname)){Auth.clear();location.href='/';throw new Error('401')}let data;try{data=await res.json()}catch{data={success:false,detail:'HTTP '+res.status+': '+res.statusText}}return{ok:res.ok,status:res.status,data}};
+let _tt=null;window.showToast=function(msg,type=''){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.className='toast show'+(type?' '+type:'');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3200)};
+window.showLoading=function(txt){const o=document.getElementById('_ov');if(!o)return;const s=o.querySelector('span');if(s)s.textContent=txt||'載入中...';o.style.display='flex';document.body.style.overflow='hidden'};
+window.hideLoading=function(){const o=document.getElementById('_ov');if(!o)return;o.style.display='none';document.body.style.overflow=''};
+window.openModal=function(id='modal'){const m=document.getElementById(id);if(!m)return;m.querySelectorAll('#_submit,[data-submit]').forEach(b=>{b.disabled=false;if(b.dataset.label)b.textContent=b.dataset.label});m.style.display='flex';requestAnimationFrame(()=>m.classList.add('open'))};
+window.closeModal=function(id='modal'){const m=document.getElementById(id);if(!m)return;m.classList.remove('open');setTimeout(()=>m.style.display='none',300)};
+window.esc=window.e=function(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')};
+window.fmtDateTime=function(iso){if(!iso)return'—';try{const d=new Date(iso);if(isNaN(d))return iso;const n=new Date(),h=(n-d)/3600000;if(h<1)return Math.floor((n-d)/60000)+'分鐘前';if(h<24)return Math.floor(h)+'小時前';return d.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}catch{return iso}};
+window.fmtPrice=n=>'$'+Number(n||0).toLocaleString();
+window.haversine=function(a,b,c,d){const R=6371,r=x=>x*Math.PI/180,v=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return R*2*Math.atan2(Math.sqrt(v),Math.sqrt(1-v))};
+let _loc=null;window.getLocation=()=>new Promise(res=>{if(_loc){res(_loc);return}if(!navigator.geolocation){res(null);return}const t=setTimeout(()=>res(null),4000);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(t);_loc={lat:p.coords.latitude,lng:p.coords.longitude};res(_loc)},()=>{clearTimeout(t);res(null)},{timeout:4000,maximumAge:60000})});
+window.haptic=t=>navigator.vibrate&&navigator.vibrate(t==='error'?[25,15,25]:8);
+
+
+const hostPhone=localStorage.getItem('host_phone');
+const hostId=parseInt(localStorage.getItem('host_id'))||0;
+const hostName=localStorage.getItem('host_name')||'房東';
+if(!hostPhone){location.href='/';throw 0}
+document.getElementById('_htitle').textContent=hostName;
+function doLogout(){Auth.clear();location.href='/'}
+
+let pg='orders',flt='all',allOrders=[];
+
+function goPg(p){
+  pg=p;
+  ['orders','props'].forEach(x=>{
+    document.getElementById('_'+x).style.display=x===p?'':'none';
+    const t=document.getElementById('t'+x.charAt(0).toUpperCase());if(t)t.classList.toggle('on',x===p);
+    const n=document.getElementById('n'+x.charAt(0).toUpperCase());if(n)n.classList.toggle('on',x===p);
+  });
+  document.getElementById('_chips').style.display=p==='orders'?'flex':'none';
+  p==='orders'?loadOrders():loadProps();
+}
+function setF(f){
+  flt=f;
+  document.querySelectorAll('#_chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f));
+  renderOrders();
+}
+const SL={open:'待接單',accepted:'進行中',arrived:'清潔中',completed:'待驗收',cancelled:'已取消'};
+function sl(o){return o.status==='completed'&&o.accepted_by_host?'已驗收':SL[o.status]||o.status}
+function sb(o){return o.status==='completed'&&o.accepted_by_host?'b-verified':'b-'+(o.status||'open')}
+
+async function loadOrders(){
+  showLoading('載入訂單…');
+  const{ok,data}=await apiFetch('/orders?status=all&limit=200');
+  hideLoading();
+  if(!ok){showToast('載入失敗','error');return}
+  allOrders=(data.data||[]).filter(o=>o.host_phone&&o.host_phone.trim()===hostPhone);
+  document.getElementById('sO').textContent=allOrders.filter(o=>o.status==='open').length;
+  document.getElementById('sA').textContent=allOrders.filter(o=>o.status==='accepted'||o.status==='arrived').length;
+  document.getElementById('sP').textContent=allOrders.filter(o=>o.status==='completed'&&!o.accepted_by_host).length;
+  renderOrders();
+}
+function renderOrders(){
+  let list=[...allOrders];
+  if(flt==='open')         list=list.filter(o=>o.status==='open');
+  else if(flt==='accepted')list=list.filter(o=>o.status==='accepted'||o.status==='arrived');
+  else if(flt==='pending') list=list.filter(o=>o.status==='completed'&&!o.accepted_by_host);
+  else if(flt==='verified')list=list.filter(o=>o.status==='completed'&&o.accepted_by_host);
+  list.sort((a,b)=>(b.created_at||'')>(a.created_at||'')?1:-1);
+  const el=document.getElementById('_orders');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="ei">📋</div><div class="et">暫無訂單</div><div class="es">點擊右下角 + 發布任務</div></div>';return}
+  el.innerHTML=list.map((o,i)=>`
+    <div class="order-card" style="animation-delay:${i*.03}s">
+      <div class="oc-top">
+        <div><span class="badge ${sb(o)}">${sl(o)}</span><div class="oc-name">${e(o.property_name)||'未命名'}</div></div>
+        <div class="price">${o.price}</div>
+      </div>
+      <div class="row">📍 ${e(o.property_address||'—')}</div>
+      <div class="row">🕐 退房 ${fmtDateTime(o.checkout_time)}</div>
+      ${o.cleaner_name?`<div class="row">👷 ${e(o.cleaner_name)}</div>`:''}
+      ${o.text_notes?`<div class="note"><div class="note-lbl">備註</div>${e(o.text_notes)}</div>`:''}
+      ${pStrip(o)}
+      ${o.status==='completed'&&!o.accepted_by_host?`<button class="btn btn-blue" style="margin-top:14px" onclick="openGal(${o.id})">📸 查看完工照片並驗收</button>`:''}
+      ${o.status==='completed'&&o.accepted_by_host?'<div class="verified-tag" style="margin-top:12px">✅ 已驗收完成</div>':''}
+      ${o.status==='open'?`<div class="actions"><button class="act act-blue" onclick="editOrder(${o.id})">✏️ 編輯</button><button class="act act-red" onclick="delOrder(${o.id})">🗑️ 刪除</button></div>`:''}
+    </div>`).join('');
+}
+function pStrip(o){
+  if(!o.completion_photos)return'';
+  try{const p=typeof o.completion_photos==='string'?JSON.parse(o.completion_photos):(o.completion_photos||[]);return p.length?'<div class="strip">'+p.slice(0,4).map(u=>`<img src="${e(u)}" onclick="openGal(${o.id})" loading="lazy">`).join('')+'</div>':''}catch{return''}
+}
+let _gid=null;
+function openGal(id){
+  _gid=id;const o=allOrders.find(x=>x.id===id);if(!o)return;
+  let p=[];try{p=o.completion_photos?(typeof o.completion_photos==='string'?JSON.parse(o.completion_photos):o.completion_photos):[]}catch{}
+  document.getElementById('_gg').innerHTML=p.map(u=>`<img src="${e(u)}" onclick="window.open('${e(u)}','_blank')">`).join('')||'<p style="color:rgba(255,255,255,.4);text-align:center;padding:40px;grid-column:1/-1">暫無照片</p>';
+  document.getElementById('_gf').innerHTML=o.accepted_by_host?'<div class="verified-tag">✅ 已驗收</div>':`<button class="btn btn-primary" onclick="doVerify(${id})">✅ 確認驗收</button>`;
+  document.getElementById('gallery').classList.add('open');
+}
+function closeGal(){document.getElementById('gallery').classList.remove('open');_gid=null}
+async function doVerify(id){
+  if(!confirm('確認驗收此訂單？'))return;
+  const{ok}=await apiFetch('/orders/'+id,'PATCH',{accepted_by_host:1});
+  if(ok){showToast('驗收成功','success');closeGal();loadOrders()}else showToast('驗收失敗','error');
+}
+async function delOrder(id){
+  if(!confirm('確定刪除此訂單？'))return;
+  const{ok}=await apiFetch('/orders/'+id,'DELETE');
+  if(ok){showToast('已刪除','success');loadOrders()}else showToast('刪除失敗','error');
+}
+
+// ── Properties ──────────────────────────────────────────────────
+async function loadProps(){
+  showLoading('載入房源…');
+  const{ok,data}=await apiFetch('/properties?status=active');
+  hideLoading();
+  if(!ok){showToast('載入失敗','error');return}
+  const props=(data.data||[]).filter(p=>p.host_phone===hostPhone);
+  const el=document.getElementById('_props');
+  if(!props.length){el.innerHTML='<div class="empty"><div class="ei">🏡</div><div class="et">尚無房源</div><div class="es">點擊 + 新增</div></div>';return}
+  el.innerHTML=props.map((p,i)=>`
+    <div class="order-card" style="animation-delay:${i*.03}s">
+      <div class="oc-name">${e(p.name)}</div>
+      <div class="row">📍 ${e(p.address)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        <span class="badge" style="background:#f4f4f8;color:#666">🛏 ${p.bedrooms||0}</span>
+        <span class="badge" style="background:#f4f4f8;color:#666">🚿 ${p.bathrooms||0}</span>
+        ${p.area?`<span class="badge" style="background:#f4f4f8;color:#666">📐 ${p.area}sqft</span>`:''}
+      </div>
+      <div class="actions">
+        <button class="act act-blue" onclick="editProp(${p.id})">✏️ 修改</button>
+        <button class="act act-red"  onclick="delProp(${p.id})">🗑️ 刪除</button>
+      </div>
+    </div>`).join('');
+}
+async function delProp(id){
+  if(!confirm('確定刪除此房源？'))return;
+  const{ok}=await apiFetch('/properties/'+id,'DELETE');
+  if(ok){showToast('已刪除','success');loadProps()}else showToast('刪除失敗','error');
+}
+async function verifyAddr(){
+  const addr=document.getElementById('pAddr')?.value.trim();const st=document.getElementById('_ast');
+  if(!addr||!st)return;st.textContent='🔄 驗證中…';st.className='addr-hint';
+  const{ok,data}=await apiFetch('/geocode?address='+encodeURIComponent(addr));
+  if(ok&&data.success){
+    st.textContent='✅ 地址驗證成功';st.className='addr-hint addr-ok';
+    if(data.province)(document.getElementById('pProv')||{}).value=data.province;
+    if(data.city)(document.getElementById('pCity')||{}).value=data.city;
+    if(data.street)(document.getElementById('pSt')||{}).value=data.street;
+    if(data.house_number)(document.getElementById('pH')||{}).value=data.house_number;
+    if(data.postcode)(document.getElementById('pPost')||{}).value=data.postcode;
+  }else{st.textContent='❌ 無法識別地址';st.className='addr-hint addr-err'}
+}
+function propForm(p={}){return`
+  <div class="field"><label>房源名稱 *</label><input type="text" id="pName" class="input" value="${e(p.name||'')}" placeholder="如：信義區景觀套房"></div>
+  <div class="field"><label>完整地址 *</label>
+    <div style="display:flex;gap:8px"><input type="text" id="pAddr" class="input" value="${e(p.address||'')}" placeholder="詳細地址" style="flex:1"><button type="button" onclick="verifyAddr()" style="padding:0 16px;border-radius:13px;border:none;background:#3b5bdb;color:#fff;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit">驗證</button></div>
+    <div id="_ast" class="addr-hint"></div></div>
+  <div class="g2">
+    <div class="field"><label>省/州</label><input type="text" id="pProv" class="input" value="${e(p.province||'')}"></div>
+    <div class="field"><label>市/區</label><input type="text" id="pCity" class="input" value="${e(p.city||'')}"></div>
+  </div>
+  <div class="g2">
+    <div class="field"><label>街道</label><input type="text" id="pSt" class="input" value="${e(p.street||'')}"></div>
+    <div class="field"><label>門牌</label><input type="text" id="pH" class="input" value="${e(p.house_number||'')}"></div>
+  </div>
+  <div class="g2">
+    <div class="field"><label>郵遞區號</label><input type="text" id="pPost" class="input" value="${e(p.postal_code||'')}"></div>
+    <div class="field"><label>面積(sqft)</label><input type="number" id="pArea" class="input" value="${p.area||800}"></div>
+  </div>
+  <div class="g3">
+    <div class="field"><label>臥室</label><input type="number" id="pBed" class="input" value="${p.bedrooms||1}" min="0"></div>
+    <div class="field"><label>衛浴</label><input type="number" id="pBath" class="input" value="${p.bathrooms||1}" min="0"></div>
+    <div class="field"><label>樓層</label><input type="number" id="pFlr" class="input" value="${p.floor||1}" min="1"></div>
+  </div>`}
+function readPF(){return{name:document.getElementById('pName').value.trim(),address:document.getElementById('pAddr').value.trim(),province:document.getElementById('pProv')?.value.trim()||'',city:document.getElementById('pCity')?.value.trim()||'',street:document.getElementById('pSt')?.value.trim()||'',house_number:document.getElementById('pH')?.value.trim()||'',postal_code:document.getElementById('pPost')?.value.trim()||'',area:parseFloat(document.getElementById('pArea')?.value)||800,bedrooms:parseInt(document.getElementById('pBed')?.value)||1,bathrooms:parseInt(document.getElementById('pBath')?.value)||1,floor:parseInt(document.getElementById('pFlr')?.value)||1,host_phone:hostPhone}}
+function showPropModal(p={},edit=false){
+  document.getElementById('_mt').textContent=edit?'修改房源':'新增房源';
+  document.getElementById('_mb').innerHTML=propForm(p);
+  const btn=document.getElementById('_submit');btn.dataset.label='確認';btn.textContent='確認';
+  btn.onclick=async()=>{
+    const body=readPF();if(!body.name){showToast('請填寫房源名稱');return}if(!body.address){showToast('請填寫地址');return}
+    btn.disabled=true;btn.textContent='提交中…';
+    try{const{ok,data}=edit?await apiFetch('/properties/'+p.id,'PUT',body):await apiFetch('/properties','POST',body);
+    if(ok){showToast(edit?'已更新':'已新增','success');closeModal();loadProps()}else showToast(data.detail||'操作失敗','error')}
+    finally{btn.disabled=false;btn.textContent='確認'}
+  };openModal();
+}
+async function editProp(id){const{ok,data}=await apiFetch('/properties/'+id);if(ok)showPropModal(data.data,true)}
+async function showOrderModal(ex=null){
+  document.getElementById('_mt').textContent=ex?'修改訂單':'發布清潔任務';
+  document.getElementById('_mb').innerHTML=`
+    <div class="field"><label>房源 *</label><select id="oProp" class="input"><option>載入中…</option></select></div>
+    <div class="field"><label>退房時間 *</label><input type="datetime-local" id="oTime" class="input" value="${ex?.checkout_time?.slice(0,16)||''}"></div>
+    <div class="field"><label>清潔報價 ($)</label><input type="number" id="oPrice" class="input" placeholder="120" value="${ex?.price||''}"></div>
+    <div class="field"><label>備註（可選）</label><textarea id="oNote" class="input" rows="2" placeholder="輸入備註…">${e(ex?.text_notes||'')}</textarea></div>`;
+  apiFetch('/properties').then(({data})=>{
+    const props=(data.data||[]).filter(p=>p.host_phone===hostPhone);
+    document.getElementById('oProp').innerHTML=props.length?props.map(p=>`<option value="${p.id}" ${ex?.property_id===p.id?'selected':''}>${e(p.name)}</option>`).join(''):'<option value="">— 請先新增房源 —</option>';
+  });
+  const btn=document.getElementById('_submit');btn.dataset.label='確認';btn.textContent='確認';
+  btn.onclick=async()=>{
+    const propId=parseInt(document.getElementById('oProp').value)||0,time=document.getElementById('oTime').value,price=parseFloat(document.getElementById('oPrice').value)||0,notes=document.getElementById('oNote').value.trim()||null;
+    if(!propId||!time){showToast('請選擇房源並設定退房時間');return}
+    btn.disabled=true;btn.textContent=ex?'更新中…':'發布中…';
+    try{
+      if(ex){const{ok,data}=await apiFetch('/orders/'+ex.id,'PATCH',{checkout_time:time,text_notes:notes});if(ok){showToast('已更新','success');closeModal();loadOrders()}else showToast(data.detail||'失敗','error')}
+      else{const{ok,data}=await apiFetch('/orders','POST',{property_id:propId,checkout_time:time,price,host_id:hostId,host_phone:hostPhone,text_notes:notes});if(ok){showToast('任務已發布！','success');closeModal();loadOrders()}else showToast(data.detail||'發布失敗','error')}
+    }finally{btn.disabled=false;btn.textContent='確認'}
+  };openModal();
+}
+function editOrder(id){const o=allOrders.find(x=>x.id===id);if(o)showOrderModal(o)}
+function onFab(){pg==='orders'?showOrderModal():showPropModal()}
+loadOrders();
+
+</script>
+</body>
+</html>
